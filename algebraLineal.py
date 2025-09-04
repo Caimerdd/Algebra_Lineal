@@ -1,4 +1,4 @@
-def imprimir_matriz(matriz, mensaje=""):
+def imprimirMatriz(matriz, mensaje=""):
     """Imprime la matriz de forma legible."""
     if mensaje:
         print("\n" + mensaje)
@@ -6,13 +6,12 @@ def imprimir_matriz(matriz, mensaje=""):
         print(["{0:8.3f}".format(x) for x in fila])
     print()
 
-def eliminacion_gaussiana(matriz):
+def eliminacionGaussiana(matriz):
     """Aplica el método de eliminación Gaussiana paso a paso."""
     n = len(matriz)         # Número de filas (ecuaciones)
     m = len(matriz[0])      # Número de columnas (incógnitas + 1)
 
-    imprimir_matriz(matriz, "Matriz inicial (aumentada):")
-
+    imprimirMatriz(matriz, "Matriz inicial (aumentada):")
     # Eliminación hacia adelante
     for i in range(n):
         # 1. Asegurar que el pivote no sea cero (si es, cambiar filas)
@@ -20,20 +19,18 @@ def eliminacion_gaussiana(matriz):
             for k in range(i+1, n):
                 if matriz[k][i] != 0:
                     matriz[i], matriz[k] = matriz[k], matriz[i]
-                    imprimir_matriz(matriz, f"Intercambio de fila {i+1} con fila {k+1}:")
+                    imprimirMatriz(matriz, f"Intercambio de fila {i+1} con fila {k+1}:")
                     break
-
         # 2. Normalizar la fila i (pivote = 1)
         pivote = matriz[i][i]
         if pivote != 0:
             matriz[i] = [x / pivote for x in matriz[i]]
-            imprimir_matriz(matriz, f"Normalizando fila {i+1} (pivote = 1):")
-
+            imprimirMatriz(matriz, f"Normalizando fila {i+1} (pivote = 1):")
         # 3. Eliminar los elementos debajo del pivote
         for j in range(i+1, n):
             factor = matriz[j][i]
             matriz[j] = [a - factor*b for a, b in zip(matriz[j], matriz[i])]
-            imprimir_matriz(matriz, f"Eliminando elemento en fila {j+1}, columna {i+1}:")
+            imprimirMatriz(matriz, f"Eliminando elemento en fila {j+1}, columna {i+1}:")
 
     # Sustitución hacia atrás
     soluciones = [0 for _ in range(n)]
@@ -47,7 +44,7 @@ def eliminacion_gaussiana(matriz):
 
     return soluciones
 
-def leer_entero(mensaje):
+def leerEntero(mensaje):
     """Lee un número entero con validación."""
     try:
         valor = int(input(mensaje))
@@ -59,7 +56,7 @@ def leer_entero(mensaje):
         print(" Entrada inválida, debe ser un número entero.")
         return None
 
-def leer_fila(n_columnas, indice):
+def leerFila(n_columnas, indice):
     """Lee una fila con validación de cantidad de valores numéricos."""
     try:
         fila = list(map(float, input(f"Fila {indice+1} ({n_columnas} valores separados por espacio): ").split()))
@@ -79,23 +76,23 @@ def menu():
         opcion = input("Seleccione una opción: ")
 
         if opcion == "1":
-            n = leer_entero("Ingrese el número de ecuaciones (filas): ")
+            n = leerEntero("Ingrese el número de filas: ")
             if n is None:  # error -> volver al menú
                 continue
 
-            m = leer_entero("Ingrese el número de incógnitas (columnas): ")
+            m = leerEntero("Ingrese el número de columnas: ")
             if m is None:  # error -> volver al menú
                 continue
 
             if m != n:
-                print(" Por simplicidad, el sistema debe ser cuadrado (mismo número de ecuaciones e incógnitas).")
+                print(" Por simplicidad, el sistema debe ser cuadrado (mismo número de filas y columnas).")
                 continue
 
             print("\nIngrese la matriz aumentada (coeficientes + términos independientes):")
             matriz = []
             valido = True
             for i in range(n):
-                fila = leer_fila(m+1, i)
+                fila = leerFila(m+1, i)
                 if fila is None:  # error -> cancelar ingreso
                     valido = False
                     break
@@ -105,7 +102,7 @@ def menu():
                 print(" Error en el ingreso de datos. Regresando al menú principal...")
                 continue
 
-            eliminacion_gaussiana(matriz)
+            eliminacionGaussiana(matriz)
 
         elif opcion == "2":
             print(" Saliendo del programa...")
@@ -113,6 +110,4 @@ def menu():
         else:
             print(" Opción no válida.")
 
-# Ejecutar programa
-if __name__ == "__main__":
-    menu()
+menu()
