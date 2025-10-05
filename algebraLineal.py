@@ -374,12 +374,3 @@ def independenciaVectores(matriz):
 
 # alias por compatibilidad
 independencia_vectores = independenciaVectores
-
-# --- Programa principal ---
-if __name__ == "__main__":
-    ecuaciones, var_orden = leer_sistema()
-    matriz = construir_matriz(ecuaciones, var_orden)
-    print("\nMatriz aumentada inicial:")
-    imprimir_matriz(matriz, var_orden)
-    print("\nAplicando Gauss–Jordan...")
-    gauss_jordan(matriz, var_orden)

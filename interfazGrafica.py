@@ -110,8 +110,8 @@ class MainApp(ctk.CTk):
 			except Exception:
 				self.op_var.trace('w', lambda *args: self.on_operation_change())
 
-			gen_btn = ctk.CTkButton(top_frame, text="Generar matrices", command=self.generate_matrix_grids)
-			gen_btn.grid(row=0, column=5, padx=(8,4))
+			self.gen_btn = ctk.CTkButton(top_frame, text="Generar matrices", command=self.generate_matrix_grids)
+			self.gen_btn.grid(row=0, column=5, padx=(8,4))
 
 			# Middle: matrices input area
 			middle = ctk.CTkFrame(self.content)
@@ -125,9 +125,9 @@ class MainApp(ctk.CTk):
 			# Etiqueta dinámica: si se quiere comprobar independencia, A representa el conjunto de vectores (columnas)
 			lbl_a_text = "Matriz A"
 			if hasattr(self, 'op_var') and self.op_var.get() == 'Independencia':
-				lbl_a_text = "Vectores (columnas)"
-			lbl_a = ctk.CTkLabel(self.frame_a, text=lbl_a_text)
-			lbl_a.grid(row=0, column=0, sticky="w", padx=8, pady=6)
+				lbl_a_text = "Conjuntos de Vectores"
+			self.lbl_a = ctk.CTkLabel(self.frame_a, text=lbl_a_text)
+			self.lbl_a.grid(row=0, column=0, sticky="w", padx=8, pady=6)
 			self.text_a = ctk.CTkTextbox(self.frame_a, height=100)
 			self.text_a.grid(row=1, column=0, sticky="we", padx=8)
 			load_a = ctk.CTkButton(self.frame_a, text="Leer desde texto", command=lambda: self.read_matrix_from_text('A'))
@@ -239,12 +239,33 @@ class MainApp(ctk.CTk):
 					self.grid_frame_b.append(e2)
 					self.entries_b[r][c] = e2
 
-		# clear result
+		# clear result and show context-appropriate message
 		self.result_box.delete('0.0', 'end')
-		self.result_box.insert('0.0', 'Matrices listas. Puedes completar las entradas o pegar texto y usar "Leer desde texto".')
+		if self.op_var.get() == 'Independencia':
+			self.result_box.insert('0.0', 'Conjuntos listos. Puedes completar las entradas con componentes o pegar vectores (uno por línea) y usar "Leer desde texto".')
+		else:
+			self.result_box.insert('0.0', 'Matrices listas. Puedes completar las entradas o pegar texto y usar "Leer desde texto".')
 
 	def on_operation_change(self):
 		op = self.op_var.get()
+		# Update left label text depending on mode
+		try:
+			if op == 'Independencia':
+				self.lbl_a.configure(text='Conjuntos de Vectores')
+			else:
+				self.lbl_a.configure(text='Matriz A')
+		except Exception:
+			# lbl_a may not exist yet during initialization
+			pass
+		# Update generate button text when appropriate
+		try:
+			if op == 'Independencia':
+				self.gen_btn.configure(text='Generar conjuntos')
+			else:
+				self.gen_btn.configure(text='Generar matrices')
+		except Exception:
+			# gen_btn might not be created yet during initialization
+			pass
 		if op == 'Gauss/Gauss-Jordan':
 			# show gauss mode selector, hide B frame controls
 			self.gauss_mode_menu.grid()
