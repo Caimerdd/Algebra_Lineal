@@ -1,0 +1,4 @@
+# Project dependencies
+# `customtkinter` is required for `interfazGrafica.py` (install from PyPI).
+# `tkinter` is part of the Python standard library and is not installed via pip.
+customtkinter
