@@ -22,21 +22,9 @@ class MainApp(ctk.CTk):
 		title = ctk.CTkLabel(self.nav_frame, text="Menú", font=ctk.CTkFont(size=18, weight="bold"))
 		title.grid(row=0, column=0, padx=12, pady=(12, 8), sticky="w")
 
-		# Buttons in left menu
-		self.btn_basic = ctk.CTkButton(self.nav_frame, text="  Matemática Básica", anchor="w", command=lambda: self.show_section('Matemática Básica'))
-		self.btn_basic.grid(row=1, column=0, sticky="ew", padx=12, pady=6)
-
-		self.btn_calc = ctk.CTkButton(self.nav_frame, text="  Cálculo", anchor="w", command=lambda: self.show_section('Cálculo'))
-		self.btn_calc.grid(row=2, column=0, sticky="ew", padx=12, pady=6)
-
-		self.btn_calc2 = ctk.CTkButton(self.nav_frame, text="  Cálculo II", anchor="w", command=lambda: self.show_section('Cálculo II'))
-		self.btn_calc2.grid(row=3, column=0, sticky="ew", padx=12, pady=6)
-
+		# Left menu: solo Álgebra Lineal
 		self.btn_linear = ctk.CTkButton(self.nav_frame, text="  Álgebra Lineal", anchor="w", command=lambda: self.show_section('Álgebra Lineal'))
-		self.btn_linear.grid(row=4, column=0, sticky="ew", padx=12, pady=6)
-
-		self.btn_config = ctk.CTkButton(self.nav_frame, text="  Configuración", anchor="w", command=lambda: self.show_section('Configuración'))
-		self.btn_config.grid(row=5, column=0, sticky="ew", padx=12, pady=6)
+		self.btn_linear.grid(row=1, column=0, sticky="ew", padx=12, pady=6)
 
 		# filler to push items up
 		self.filler = ctk.CTkLabel(self.nav_frame, text="")
@@ -97,18 +85,18 @@ class MainApp(ctk.CTk):
 
 			r_lbl = ctk.CTkLabel(top_frame, text="Filas:")
 			r_lbl.grid(row=0, column=0, padx=(4,2))
-			self.rows_var = ctk.IntVar(value=2)
+			self.rows_var = ctk.StringVar(value="2")
 			self.ent_rows = ctk.CTkEntry(top_frame, width=60, textvariable=self.rows_var)
 			self.ent_rows.grid(row=0, column=1, padx=(0,8))
 
 			c_lbl = ctk.CTkLabel(top_frame, text="Columnas:")
 			c_lbl.grid(row=0, column=2, padx=(4,2))
-			self.cols_var = ctk.IntVar(value=2)
+			self.cols_var = ctk.StringVar(value="2")
 			self.ent_cols = ctk.CTkEntry(top_frame, width=60, textvariable=self.cols_var)
 			self.ent_cols.grid(row=0, column=3, padx=(0,8))
 
 			self.op_var = ctk.StringVar(value="Suma")
-			op_menu = ctk.CTkOptionMenu(top_frame, values=["Suma", "Resta", "Multiplicación", "Gauss/Gauss-Jordan"], variable=self.op_var)
+			op_menu = ctk.CTkOptionMenu(top_frame, values=["Suma", "Resta", "Multiplicación", "Gauss/Gauss-Jordan", "Independencia"], variable=self.op_var)
 			op_menu.grid(row=0, column=4, padx=(8,8))
 			# gauss mode selector (visible only when Gauss/Gauss-Jordan selected)
 			self.gauss_mode_var = ctk.StringVar(value="Gauss-Jordan")
@@ -134,7 +122,11 @@ class MainApp(ctk.CTk):
 			# Left: Matrix A
 			self.frame_a = ctk.CTkFrame(middle)
 			self.frame_a.grid(row=0, column=0, sticky="nswe", padx=(0,6))
-			lbl_a = ctk.CTkLabel(self.frame_a, text="Matriz A")
+			# Etiqueta dinámica: si se quiere comprobar independencia, A representa el conjunto de vectores (columnas)
+			lbl_a_text = "Matriz A"
+			if hasattr(self, 'op_var') and self.op_var.get() == 'Independencia':
+				lbl_a_text = "Vectores (columnas)"
+			lbl_a = ctk.CTkLabel(self.frame_a, text=lbl_a_text)
 			lbl_a.grid(row=0, column=0, sticky="w", padx=8, pady=6)
 			self.text_a = ctk.CTkTextbox(self.frame_a, height=100)
 			self.text_a.grid(row=1, column=0, sticky="we", padx=8)
@@ -215,6 +207,8 @@ class MainApp(ctk.CTk):
 			self.result_box.insert('0.0', 'Filas y columnas deben ser enteros positivos.')
 			return
 
+
+
 		# clear any existing entry grids
 		for w in getattr(self, 'grid_frame_a', []):
 			w.destroy()
@@ -255,6 +249,10 @@ class MainApp(ctk.CTk):
 			# show gauss mode selector, hide B frame controls
 			self.gauss_mode_menu.grid()
 			self.frame_b.grid_remove()
+		elif op == 'Independencia':
+			# hide B frame (only A's columns are used)
+			self.gauss_mode_menu.grid_remove()
+			self.frame_b.grid_remove()
 		else:
 			self.gauss_mode_menu.grid_remove()
 			self.frame_b.grid()
@@ -283,6 +281,7 @@ class MainApp(ctk.CTk):
 			self.result_box.delete('0.0', 'end')
 			self.result_box.insert('0.0', 'En modo Gauss/Gauss-Jordan sólo se permite una matriz (Matriz A).')
 			return
+        
 		target_text = self.text_a if which=='A' else self.text_b
 		content = target_text.get('0.0', 'end').strip()
 		if content == '':
@@ -303,6 +302,28 @@ class MainApp(ctk.CTk):
 					self.result_box.insert('0.0', f'Valor inválido al parsear: {p}')
 					return
 			mat.append(row)
+
+		# Si la operación es 'Independencia', interpretamos cada línea como UN vector (fila)
+		# y convertimos ese conjunto de vectores a una matriz cuyas columnas son esos vectores.
+		if self.op_var.get() == 'Independencia':
+			# mat es lista de vectores (cada elemento es una lista de componentes)
+			if not mat:
+				self.result_box.delete('0.0', 'end')
+				self.result_box.insert('0.0', 'No se detectaron vectores en el texto.')
+				return
+			vec_len = len(mat[0])
+			if any(len(v) != vec_len for v in mat):
+				self.result_box.delete('0.0', 'end')
+				self.result_box.insert('0.0', 'Todos los vectores deben tener la misma dimensión (componentes por vector).')
+				return
+			# Transponer: filas = vec_len, cols = número de vectores
+			rows = vec_len
+			cols = len(mat)
+			M = [[0.0]*cols for _ in range(rows)]
+			for c, v in enumerate(mat):
+				for r in range(rows):
+					M[r][c] = v[r]
+			mat = M
 
 		# check rectangular
 		if any(len(r)!=len(mat[0]) for r in mat):
@@ -377,7 +398,27 @@ class MainApp(ctk.CTk):
 			else:
 				self.result_box.insert('0.0', f"Estado: {res.get('status')}")
 			return
-		
+
+		# Independencia (columnas de A)
+		if op == 'Independencia':
+			try:
+				A = self.parse_matrix_entries(self.entries_a)
+			except Exception as e:
+				self.result_box.delete('0.0', 'end')
+				self.result_box.insert('0.0', f'Error: {e}')
+				return
+			from algebraLineal import independenciaVectores
+			res = independenciaVectores(A)
+			self.steps_box.delete('0.0', 'end')
+			self.result_box.delete('0.0', 'end')
+			if res.get('num_vectors', 0) == 0:
+				self.result_box.insert('0.0', 'No hay vectores (matriz vacía).')
+			else:
+				msg = f"Rank = {res.get('rank')} / {res.get('num_vectors')}.\n"
+				msg += 'Linealmente independiente.' if res.get('independent') else 'Linealmente dependiente.'
+				self.result_box.insert('0.0', msg)
+			return
+
 		# Otherwise treat as binary matrix operations between A and B
 		try:
 			A = self.parse_matrix_entries(self.entries_a)
