@@ -15,6 +15,10 @@ def _matrix_snapshot(M: List[List[float]]) -> List[List[float]]:
     return [[float(x) for x in fila] for fila in M]
 
 
+def _fmt(x: float) -> str:
+    return f"{x:.4g}"
+
+
 def gauss_steps(matriz: List[List[float]]) -> Dict:
     """
     Ejecuta Eliminación Gaussiana (solo 'forward elimination') sobre una copia de `matriz`
@@ -38,6 +42,7 @@ def gauss_steps(matriz: List[List[float]]) -> Dict:
     m = len(A[0]) - 1  # número de variables (última col = RHS)
 
     steps = [_matrix_snapshot(A)]
+    ops: list[str] = ['Inicial']
 
     row = 0
     pivot_cols: List[int] = []
@@ -54,6 +59,7 @@ def gauss_steps(matriz: List[List[float]]) -> Dict:
         if sel != row:
             A[row], A[sel] = A[sel], A[row]
             steps.append(_matrix_snapshot(A))
+            ops.append(f'Intercambiar F{row+1} <-> F{sel+1}')
 
         # eliminar por debajo
         for r in range(row + 1, n):
@@ -62,6 +68,7 @@ def gauss_steps(matriz: List[List[float]]) -> Dict:
                 for c in range(col, m + 1):
                     A[r][c] -= factor * A[row][c]
                 steps.append(_matrix_snapshot(A))
+                ops.append(f'F{r+1} = F{r+1} - ({_fmt(factor)})·F{row+1}')
 
         pivot_cols.append(col)
         row += 1
@@ -71,7 +78,7 @@ def gauss_steps(matriz: List[List[float]]) -> Dict:
     # inconsistencia: 0...0 | b!=0
     for r in range(n):
         if all(abs(A[r][c]) < EPS for c in range(m)) and abs(A[r][m]) > EPS:
-            return {'steps': steps, 'status': 'inconsistent', 'solution': None}
+            return {'steps': steps, 'ops': ops, 'status': 'inconsistent', 'solution': None}
 
     # sustitución regresiva si hay tantos pivotes como variables
     if len(pivot_cols) == m:
@@ -84,9 +91,9 @@ def gauss_steps(matriz: List[List[float]]) -> Dict:
                 s -= A[r][c] * x[c]
             # el pivote A[r][col] no debería ser ~0
             x[col] = s / A[r][col]
-        return {'steps': steps, 'status': 'unique', 'solution': x}
+    return {'steps': steps, 'ops': ops, 'status': 'unique', 'solution': x}
 
-    return {'steps': steps, 'status': 'incomplete', 'solution': None}
+    return {'steps': steps, 'ops': ops, 'status': 'incomplete', 'solution': None}
 
 
 def gauss_jordan_steps(matriz: List[List[float]]) -> Dict:
@@ -109,6 +116,7 @@ def gauss_jordan_steps(matriz: List[List[float]]) -> Dict:
     m = len(A[0]) - 1
 
     steps = [_matrix_snapshot(A)]
+    ops: List[str] = ["Inicial"]
 
     fila = 0
     pivot_map: Dict[int, int] = {}  # col -> fila
@@ -122,17 +130,18 @@ def gauss_jordan_steps(matriz: List[List[float]]) -> Dict:
                 break
         if sel is None:
             continue
-
         # swap si hace falta
         if sel != fila:
             A[fila], A[sel] = A[sel], A[fila]
             steps.append(_matrix_snapshot(A))
+            ops.append(f'Intercambiar F{fila+1} <-> F{sel+1}')
 
         # normalizar fila del pivote
         pivote = A[fila][col]
         for c in range(m + 1):
             A[fila][c] /= pivote
         steps.append(_matrix_snapshot(A))
+        ops.append(f'F{fila+1} = F{fila+1} / {_fmt(pivote) if isinstance(pivote, float) else pivote}')
 
         # eliminar en el resto de filas (arriba y abajo)
         for r in range(n):
@@ -141,6 +150,7 @@ def gauss_jordan_steps(matriz: List[List[float]]) -> Dict:
                 for c in range(m + 1):
                     A[r][c] -= factor * A[fila][c]
                 steps.append(_matrix_snapshot(A))
+                ops.append(f'F{r+1} = F{r+1} - ({_fmt(factor)})·F{fila+1}')
 
         pivot_map[col] = fila
         fila += 1
@@ -150,18 +160,18 @@ def gauss_jordan_steps(matriz: List[List[float]]) -> Dict:
     # inconsistencia: 0...0 | b!=0
     for r in range(n):
         if all(abs(A[r][c]) < EPS for c in range(m)) and abs(A[r][m]) > EPS:
-            return {'steps': steps, 'status': 'inconsistent', 'solution': None}
+            return {'steps': steps, 'ops': ops, 'status': 'inconsistent', 'solution': None}
 
     # única si hay pivote en todas las columnas de variable
     if len(pivot_map) == m:
         sol = [0.0] * m
         for col, r in pivot_map.items():
             sol[col] = A[r][m]
-        return {'steps': steps, 'status': 'unique', 'solution': sol}
+        return {'steps': steps, 'ops': ops, 'status': 'unique', 'solution': sol}
 
     # si no, infinitas: columnas sin pivote = variables libres
     libres = [c for c in range(m) if c not in pivot_map]
-    return {'steps': steps, 'status': 'infinite', 'solution': None, 'free_vars': libres}
+    return {'steps': steps, 'ops': ops, 'status': 'infinite', 'solution': None, 'free_vars': libres}
 
 
 def independenciaVectores(matriz: List[List[float]]) -> Dict:

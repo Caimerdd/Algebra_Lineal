@@ -424,17 +424,21 @@ class AplicacionPrincipal(ctk.CTk):
                 self._set_resultado(f'Error: {e}')
                 return
 
-            from Algebra_Lineal.Complement import gauss_steps, gauss_jordan_steps
+            from Complement import gauss_steps, gauss_jordan_steps
             modo = self.modo_gauss_var.get() if hasattr(self, 'modo_gauss_var') else 'Gauss-Jordan'
             res = gauss_steps(A) if modo == 'Gauss' else gauss_jordan_steps(A)
 
             # Pasos (con límite)
             self.pasos_caja.delete('0.0', 'end')
             steps = res.get('steps', [])
+            ops = res.get('ops', [])
             total = len(steps)
             mostrados = 0
             for i, paso in enumerate(steps):
                 if i < 20 or i % PASO_SALTOS == 0:
+                    # mostrar la operación textual que generó este paso (si existe)
+                    if i < len(ops) and ops[i]:
+                        self.pasos_caja.insert('end', f'Op: {ops[i]}\n')
                     self._append_matriz(paso, f'Paso {i}:')
                     mostrados += 1
                 if mostrados >= MAX_SNAPSHOTS:
@@ -465,7 +469,7 @@ class AplicacionPrincipal(ctk.CTk):
                 self._set_resultado(f'Error: {e}')
                 return
 
-            from Algebra_Lineal.Complement import independenciaVectores, gauss_jordan_steps
+            from Complement import independenciaVectores, gauss_jordan_steps
             veredicto = independenciaVectores(A)
 
             # Paso a paso (RREF) con límite
@@ -473,10 +477,14 @@ class AplicacionPrincipal(ctk.CTk):
             try:
                 rref = gauss_jordan_steps(A)
                 steps = rref.get('steps', [])
+                ops = rref.get('ops', [])
                 total = len(steps)
                 mostrados = 0
                 for i, paso in enumerate(steps):
                     if i < 20 or i % PASO_SALTOS == 0:
+                        # mostrar operación textual si está disponible
+                        if i < len(ops) and ops[i]:
+                            self.pasos_caja.insert('end', f'Op: {ops[i]}\n')
                         self._append_matriz(paso, f'Paso {i} (RREF):')
                         mostrados += 1
                     if mostrados >= MAX_SNAPSHOTS:
