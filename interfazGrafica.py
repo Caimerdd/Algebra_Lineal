@@ -109,7 +109,8 @@ class AplicacionPrincipal(ctk.CTk):
     def _cargar_ui_algebra_lineal(self):
         # Grid del contenedor de contenido
         self.contenido.grid_rowconfigure(0, weight=0)   # barra superior
-        self.contenido.grid_rowconfigure(1, weight=1)   # matrices (A,B)
+        # hacer que la fila de matrices no se expanda para evitar la franja sombreada
+        self.contenido.grid_rowconfigure(1, weight=0)   # matrices (A,B)
         self.contenido.grid_rowconfigure(2, weight=0)   # controles
         self.contenido.grid_rowconfigure(3, weight=1)   # pasos+resultado
         self.contenido.grid_columnconfigure(0, weight=1)
@@ -153,8 +154,9 @@ class AplicacionPrincipal(ctk.CTk):
         self.btn_generar.grid(row=0, column=6, padx=(8, 4))
 
         # --- Zona media (matrices A y B)
+        # Contenedor de matrices con padding reducido
         medio = ctk.CTkFrame(self.contenido)
-        medio.grid(row=1, column=0, sticky="nswe", padx=12, pady=6)
+        medio.grid(row=1, column=0, sticky="nswe", padx=8, pady=4)
         medio.grid_columnconfigure(0, weight=1)
         medio.grid_columnconfigure(1, weight=1)
 
@@ -164,12 +166,18 @@ class AplicacionPrincipal(ctk.CTk):
         self.etiqueta_a = ctk.CTkLabel(self.marco_a, text="Matriz A")
         self.etiqueta_a.grid(row=0, column=0, sticky="w", padx=8, pady=6)
 
-        self.texto_a = ctk.CTkTextbox(self.marco_a, height=100)
-        self.texto_a.grid(row=1, column=0, sticky="we", padx=8)
+        # Entrada de texto (reemplazada por un stub para evitar richtextbox)
+        class TextStub:
+            def __init__(self, initial=''):
+                self._text = initial
+            def get(self, a='0.0', b='end'):
+                return self._text
+            def insert(self, a, txt):
+                self._text = str(txt)
+            def delete(self, a='0.0', b='end'):
+                self._text = ''
 
-        ctk.CTkButton(self.marco_a, text="Leer desde texto",
-                      command=lambda: self.leer_matriz_desde_texto('A'))\
-            .grid(row=2, column=0, sticky="w", padx=8, pady=6)
+        self.texto_a = TextStub()
 
         # >>> Campo escalar de A (junto a la grilla) <<<
         self.lbl_coef_a = ctk.CTkLabel(self.marco_a, text="α:")
@@ -182,12 +190,8 @@ class AplicacionPrincipal(ctk.CTk):
         self.marco_b.grid(row=0, column=1, sticky="nswe", padx=(6, 0))
         ctk.CTkLabel(self.marco_b, text="Matriz B").grid(row=0, column=0, sticky="w", padx=8, pady=6)
 
-        self.texto_b = ctk.CTkTextbox(self.marco_b, height=100)
-        self.texto_b.grid(row=1, column=0, sticky="we", padx=8)
-
-        ctk.CTkButton(self.marco_b, text="Leer desde texto",
-                      command=lambda: self.leer_matriz_desde_texto('B'))\
-            .grid(row=2, column=0, sticky="w", padx=8, pady=6)
+        # Entrada de texto B (stub)
+        self.texto_b = TextStub()
 
         # >>> Campo escalar de B (junto a la grilla) <<<
         self.lbl_coef_b = ctk.CTkLabel(self.marco_b, text="β:")
