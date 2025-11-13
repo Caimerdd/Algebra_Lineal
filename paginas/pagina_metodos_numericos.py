@@ -9,6 +9,7 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib.figure import Figure
 import sympy as sp
 import numpy as np
+from functools import partial
 
 class PaginaMetodosNumericos(PaginaBase):
     def crear_widgets(self):
@@ -32,7 +33,8 @@ class PaginaMetodosNumericos(PaginaBase):
                     font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, padx=(12, 8), pady=12)
         
         self.metodo_numerico_var = ctk.StringVar(value="Biseccion")
-        metodos = ["Biseccion"]
+        # Agregamos "Falsa Posicion" a la lista
+        metodos = ["Biseccion", "Falsa Posicion"]
         
         for i, metodo in enumerate(metodos):
             rb = ctk.CTkRadioButton(marco_metodo, text=metodo, variable=self.metodo_numerico_var, 
@@ -64,12 +66,11 @@ class PaginaMetodosNumericos(PaginaBase):
         marco_ejemplos.grid(row=2, column=0, sticky="ew", padx=12, pady=4)
         ctk.CTkLabel(marco_ejemplos, text="Cargar ejemplos:", font=ctk.CTkFont(size=13)).grid(row=0, column=0, padx=(4,6))
         
-        from functools import partial
-        ctk.CTkButton(marco_ejemplos, text="Ej 1: cos(x)-x", command=partial(self.cargar_ejemplo_biseccion, 1),
+        ctk.CTkButton(marco_ejemplos, text="Ej 1: cos(x)-x", command=partial(self.cargar_ejemplo, 1),
                       fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER, width=120).grid(row=0, column=1, padx=4)
-        ctk.CTkButton(marco_ejemplos, text="Ej 2: log(x)-exp(-x)", command=partial(self.cargar_ejemplo_biseccion, 2),
+        ctk.CTkButton(marco_ejemplos, text="Ej 2: log(x)-exp(-x)", command=partial(self.cargar_ejemplo, 2),
                       fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER, width=120).grid(row=0, column=2, padx=4)
-        ctk.CTkButton(marco_ejemplos, text="Ej 3: x**2 + 4", command=partial(self.cargar_ejemplo_biseccion, 3),
+        ctk.CTkButton(marco_ejemplos, text="Ej 3: x**2 + 4", command=partial(self.cargar_ejemplo, 3),
                       fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER, width=120).grid(row=0, column=3, padx=4)
 
         # Controles
@@ -117,7 +118,7 @@ class PaginaMetodosNumericos(PaginaBase):
         self.resultado_caja = ctk.CTkTextbox(marco_resultado, height=220, font=ctk.CTkFont(family="monospace", size=12))
         self.resultado_caja.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0,8))
 
-    def cargar_ejemplo_biseccion(self, ej_num: int):
+    def cargar_ejemplo(self, ej_num: int):
         self.limpiar_numerico()
         
         if ej_num == 1:
@@ -138,9 +139,9 @@ class PaginaMetodosNumericos(PaginaBase):
 
     def calcular_operacion_numerica(self):
         try:
-            # Importar modulo de metodos numericos
+            # Importar modulo de metodos numericos incluyendo la nueva función
             try:
-                from MetodosNumericos import metodo_biseccion
+                from MetodosNumericos import metodo_biseccion, metodo_falsa_posicion
             except ImportError:
                 self.resultado_caja.delete('0.0', 'end')
                 self.resultado_caja.insert('0.0', "ERROR: No se pudo cargar MetodosNumericos.py.")
@@ -148,56 +149,64 @@ class PaginaMetodosNumericos(PaginaBase):
 
             metodo = self.metodo_numerico_var.get()
             
-            if metodo == 'Biseccion':
-                try:
-                    funcion_str = self.ent_funcion_fx.get()
-                    a_str = self.ent_intervalo_a.get()
-                    b_str = self.ent_intervalo_b.get()
-                    tol_str = self.ent_tolerancia_e.get()
-                    
-                    if not funcion_str or not a_str or not b_str or not tol_str:
-                        raise ValueError("Todos los campos son obligatorios.")
-                    
-                    a = parse_valor(a_str)
-                    b = parse_valor(b_str)
-                    tolerancia = parse_valor(tol_str)
-                    
-                    if tolerancia <= 0:
-                        raise ValueError("La tolerancia debe ser un numero positivo.")
-                    if a >= b:
-                        raise ValueError("El intervalo es invalido (a debe ser menor que b).")
+            # Leer entradas comunes
+            try:
+                funcion_str = self.ent_funcion_fx.get()
+                a_str = self.ent_intervalo_a.get()
+                b_str = self.ent_intervalo_b.get()
+                tol_str = self.ent_tolerancia_e.get()
+                
+                if not funcion_str or not a_str or not b_str or not tol_str:
+                    raise ValueError("Todos los campos son obligatorios.")
+                
+                a = parse_valor(a_str)
+                b = parse_valor(b_str)
+                tolerancia = parse_valor(tol_str)
+                
+                if tolerancia <= 0:
+                    raise ValueError("La tolerancia debe ser un numero positivo.")
+                if a >= b:
+                    raise ValueError("El intervalo es invalido (a debe ser menor que b).")
 
+                # Selección del método
+                res = None
+                if metodo == 'Biseccion':
                     res = metodo_biseccion(funcion_str, a, b, tolerancia)
-                    
-                    self.pasos_caja.delete('0.0', 'end')
-                    self.pasos_caja.insert('0.0', '\n'.join(res.get('pasos', ['No se generaron pasos.'])))
-                    
-                    self.resultado_caja.delete('0.0', 'end')
-                    if res['estado'] == 'exito':
-                        resultado_txt = (
-                            f"Raiz encontrada (xr):\n{res['raiz']:.10f}\n\n"
-                            f"Iteraciones: {res['iteraciones']}\n"
-                            f"Error relativo final: {res.get('error', 'N/A'):.6e}"
-                        )
-                        self.resultado_caja.insert('0.0', resultado_txt)
-                    elif res['estado'] == 'max_iter':
-                        resultado_txt = (
-                            f"Se alcanzo el maximo de iteraciones.\n\n"
-                            f"Ultima aproximacion (xr):\n{res['raiz']:.10f}\n\n"
-                            f"Ultimo error: {res.get('error', 'N/A'):.6e}"
-                        )
-                        self.resultado_caja.insert('0.0', resultado_txt)
-                    else:
-                        self.resultado_caja.insert('0.0', f"Error:\n{res['mensaje']}")
+                elif metodo == 'Falsa Posicion':
+                    res = metodo_falsa_posicion(funcion_str, a, b, tolerancia)
+                else:
+                    raise ValueError("Método no implementado")
+                
+                # Mostrar Resultados
+                self.pasos_caja.delete('0.0', 'end')
+                self.pasos_caja.insert('0.0', '\n'.join(res.get('pasos', ['No se generaron pasos.'])))
+                
+                self.resultado_caja.delete('0.0', 'end')
+                if res['estado'] == 'exito':
+                    resultado_txt = (
+                        f"Raiz encontrada (xr):\n{res['raiz']:.10f}\n\n"
+                        f"Iteraciones: {res['iteraciones']}\n"
+                        f"Error relativo final: {res.get('error', 'N/A'):.6e}"
+                    )
+                    self.resultado_caja.insert('0.0', resultado_txt)
+                elif res['estado'] == 'max_iter':
+                    resultado_txt = (
+                        f"Se alcanzo el maximo de iteraciones.\n\n"
+                        f"Ultima aproximacion (xr):\n{res['raiz']:.10f}\n\n"
+                        f"Ultimo error: {res.get('error', 'N/A'):.6e}"
+                    )
+                    self.resultado_caja.insert('0.0', resultado_txt)
+                else:
+                    self.resultado_caja.insert('0.0', f"Error:\n{res['mensaje']}")
 
-                except ValueError as e:
-                    self.pasos_caja.delete('0.0', 'end')
-                    self.resultado_caja.delete('0.0', 'end')
-                    self.resultado_caja.insert('0.0', f"Error de entrada:\n{e}")
-                except Exception as e:
-                    self.pasos_caja.delete('0.0', 'end')
-                    self.resultado_caja.delete('0.0', 'end')
-                    self.resultado_caja.insert('0.0', f"Error inesperado en el calculo:\n{e}")
+            except ValueError as e:
+                self.pasos_caja.delete('0.0', 'end')
+                self.resultado_caja.delete('0.0', 'end')
+                self.resultado_caja.insert('0.0', f"Error de entrada:\n{e}")
+            except Exception as e:
+                self.pasos_caja.delete('0.0', 'end')
+                self.resultado_caja.delete('0.0', 'end')
+                self.resultado_caja.insert('0.0', f"Error inesperado en el calculo:\n{e}")
 
         except Exception as e:
             self.resultado_caja.delete('0.0', 'end')
@@ -262,28 +271,29 @@ class PaginaMetodosNumericos(PaginaBase):
                 contenido = self.resultado_caja.get('1.0', 'end-1c')
                 if 'Raiz encontrada' in contenido:
                     lineas = contenido.split('\n')
-                    for linea in lineas:
-                        if 'Raiz encontrada' in contenido:
-                            try:
-                                for line in lineas:
-                                    if 'Raiz encontrada' in line:
-                                        raiz_str = line.split(':')[1].strip()
-                                        raiz = float(raiz_str)
-                                        f_raiz = float(funcion_sympy.subs(x_sym, raiz))
-                                        ax.plot(raiz, f_raiz, 'ro', markersize=10, 
-                                               label=f'Raíz ≈ {raiz:.6f}', zorder=5)
-                                        ax.plot([raiz, raiz], [0, f_raiz], 'r--', alpha=0.7, linewidth=1)
-                                        ax.annotate(f'x ≈ {raiz:.6f}', 
-                                                   xy=(raiz, f_raiz), 
-                                                   xytext=(10, 20), 
-                                                   textcoords='offset points',
-                                                   fontsize=10,
-                                                   bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.7),
-                                                   arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"))
-                                        ax.legend(loc='best', fontsize=9)
-                                        break
-                            except:
-                                pass
+                    try:
+                        for line in lineas:
+                            if 'Raiz encontrada' in line:
+                                # Buscar la linea siguiente que tiene el valor
+                                idx = lineas.index(line)
+                                if idx + 1 < len(lineas):
+                                    raiz_str = lineas[idx+1].strip()
+                                    raiz = float(raiz_str)
+                                    f_raiz = float(funcion_sympy.subs(x_sym, raiz))
+                                    ax.plot(raiz, f_raiz, 'ro', markersize=10, 
+                                           label=f'Raíz ≈ {raiz:.6f}', zorder=5)
+                                    ax.plot([raiz, raiz], [0, f_raiz], 'r--', alpha=0.7, linewidth=1)
+                                    ax.annotate(f'x ≈ {raiz:.6f}', 
+                                               xy=(raiz, f_raiz), 
+                                               xytext=(10, 20), 
+                                               textcoords='offset points',
+                                               fontsize=10,
+                                               bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.7),
+                                               arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"))
+                                    ax.legend(loc='best', fontsize=9)
+                                    break
+                    except:
+                        pass
 
             except Exception as e:
                 ax.text(0.5, 0.5, f'Error al graficar la función:\n\n{str(e)}', 

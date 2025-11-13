@@ -55,7 +55,12 @@ class AplicacionPrincipal(ctk.CTk):
     def crear_panel_nav(self):
         self.marco_nav = ctk.CTkFrame(self, width=280, corner_radius=0)
         self.marco_nav.grid(row=0, column=0, sticky="nswe")
-        self.marco_nav.grid_rowconfigure(10, weight=1)
+        
+        # CONFIGURACIÓN DE PESOS DE FILA (Grid Layout)
+        # Fila 9: Espacio flexible (empuja hacia abajo)
+        # Fila 10: Configuración fija al fondo
+        self.marco_nav.grid_rowconfigure(9, weight=1)
+        self.marco_nav.grid_rowconfigure(10, weight=0)
         
         # Título principal
         ctk.CTkLabel(self.marco_nav, text="MathPro", 
@@ -98,15 +103,19 @@ class AplicacionPrincipal(ctk.CTk):
                       fg_color=COLOR_NUMERICOS, hover_color=COLOR_HOVER,
                       command=lambda: self.mostrar_pagina("metodos_numericos")).grid(row=8, column=0, sticky="ew", padx=12, pady=3)
 
-        # Espacio flexible
-        ctk.CTkLabel(self.marco_nav, text="").grid(row=9, column=0, sticky="nswe")
+        # ESPACIADOR (Fila 9)
+        # Ocupa todo el espacio vertical disponible
+        espaciador = ctk.CTkFrame(self.marco_nav, fg_color="transparent")
+        espaciador.grid(row=9, column=0, sticky="nsew")
 
-        # Configuracion
+        # CONFIGURACIÓN (Fila 10)
+        # Se queda fija al fondo gracias al sticky="ews" (Este, Oeste, Sur)
         marco_config = ctk.CTkFrame(self.marco_nav, fg_color="transparent")
-        marco_config.grid(row=10, column=0, sticky="ew", padx=12, pady=15)
+        marco_config.grid(row=10, column=0, sticky="ews", padx=12, pady=20)
         
         self.btn_ayuda = ctk.CTkButton(marco_config, text="📚 Ayuda SymPy",
                                      command=self.mostrar_ayuda_sympy,
+                                     width=120,
                                      fg_color=COLOR_BOTON_SECUNDARIO,
                                      hover_color=COLOR_BOTON_SECUNDARIO_HOVER)
         self.btn_ayuda.pack(side="left", padx=(0, 10))
