@@ -26,7 +26,9 @@ class PaginaOperacionesMatriciales(PaginaBase):
                     font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, padx=(12, 8), pady=12)
         
         self.operacion_matricial_var = ctk.StringVar(value="Suma")
-        operaciones = ["Suma", "Resta", "Multiplicacion", "Multiplicacion por Escalar"]
+        
+        # --- CAMBIO: Se eliminó "Multiplicacion por Escalar" de la lista ---
+        operaciones = ["Suma", "Resta", "Multiplicacion"]
         
         for i, operacion in enumerate(operaciones):
             rb = ctk.CTkRadioButton(marco_operacion, text=operacion, variable=self.operacion_matricial_var, 
@@ -214,8 +216,6 @@ class PaginaOperacionesMatriciales(PaginaBase):
             if filas_a <= 0 or cols_a <= 0 or filas_b <= 0 or cols_b <= 0:
                 raise ValueError("Las dimensiones deben ser numeros enteros positivos")
 
-            print(f"Generando cuadriculas: A({filas_a}x{cols_a}), B({filas_b}x{cols_b})")  # Debug
-
             # Limpiar cuadriculas existentes
             for widget in self.marco_grilla_a.winfo_children():
                 widget.destroy()
@@ -300,9 +300,7 @@ class PaginaOperacionesMatriciales(PaginaBase):
 
     def calcular_operacion_matricial(self):
         try:
-            print("Leyendo matriz A...")  # Debug
             A = self.leer_entradas_cuadricula(self.entradas_a)
-            print("Leyendo matriz B...")  # Debug
             B = self.leer_entradas_cuadricula(self.entradas_b)
                  
         except ValueError as e:
@@ -319,8 +317,6 @@ class PaginaOperacionesMatriciales(PaginaBase):
         operacion = self.operacion_matricial_var.get()
         fa, ca = len(A), len(A[0]) if A else 0
         fb, cb = len(B), len(B[0]) if B else 0
-        
-        print(f"Calculando {operacion} con A({fa}x{ca}), B({fb}x{cb})")  # Debug
         
         self.pasos_caja.delete('0.0','end')
         try:
@@ -363,17 +359,7 @@ class PaginaOperacionesMatriciales(PaginaBase):
                         self.pasos_caja.insert('end', f'C[{i+1},{j+1}] = ' + ' + '.join(terms) + f' = {fmt(C[i][j])}\n')
                 self.append_matriz(C,'Resultado C = A·B:')
 
-            elif operacion == 'Multiplicacion por Escalar':
-                alpha = self.leer_escalar(self.ent_coef_a)
-                C = [[alpha*A[i][j] for j in range(ca)] for i in range(fa)]
-                R = C
-                
-                self.append_matriz(A,'Matriz A:')
-                
-                for i in range(fa):
-                    for j in range(ca):
-                        self.pasos_caja.insert('end', f'C[{i+1},{j+1}] = {fmt(alpha)}·{fmt(A[i][j])} = {fmt(C[i][j])}\n')
-                self.append_matriz(C, f'Resultado C = {fmt(alpha)}·A:')
+            # --- CAMBIO: Eliminado el bloque de 'Multiplicacion por Escalar' ---
 
             else:
                 raise ValueError('Operacion desconocida')

@@ -59,6 +59,8 @@ class PaginaMetodosNumericos(PaginaBase):
         
         ctk.CTkLabel(marco_funcion, text="Tolerancia (E):", font=ctk.CTkFont(size=13)).grid(row=1, column=3, sticky="w", padx=(20, 2), pady=6)
         self.ent_tolerancia_e = ctk.CTkEntry(marco_funcion, width=100, placeholder_text="Ej: 0.0001")
+        # Valor por defecto inicial
+        self.ent_tolerancia_e.insert(0, "0.0001")
         self.ent_tolerancia_e.grid(row=1, column=4, sticky="w", padx=(2, 8), pady=6)
         
         # Ejemplos
@@ -119,7 +121,12 @@ class PaginaMetodosNumericos(PaginaBase):
         self.resultado_caja.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0,8))
 
     def cargar_ejemplo(self, ej_num: int):
+        # Limpiamos todo primero (esto ya pone la tolerancia por defecto)
         self.limpiar_numerico()
+        
+        # --- CORRECCIÓN: Borrar el campo de tolerancia antes de insertar el del ejemplo
+        # para evitar que se duplique (ej: 0.00010.0001)
+        self.ent_tolerancia_e.delete(0, 'end')
         
         if ej_num == 1:
             self.ent_funcion_fx.insert(0, "cos(x) - x")
@@ -350,6 +357,7 @@ class PaginaMetodosNumericos(PaginaBase):
             self.ent_intervalo_b.delete(0, 'end')
         if hasattr(self, 'ent_tolerancia_e'):
             self.ent_tolerancia_e.delete(0, 'end')
+            self.ent_tolerancia_e.insert(0, "0.0001") # Restaurar valor por defecto al limpiar
             
         if hasattr(self, 'pasos_caja'):
             self.pasos_caja.delete('0.0', 'end')
