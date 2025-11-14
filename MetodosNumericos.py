@@ -1,5 +1,6 @@
 import math
 from typing import Dict, List, Callable, Any
+import sympy as sp # Necesario para calcular la derivada en Newton
 
 # Diccionario de funciones seguras
 SAFE_MATH_FUNCTIONS = {
@@ -10,8 +11,8 @@ SAFE_MATH_FUNCTIONS = {
     'asin': math.asin,
     'atan': math.atan,
     'exp': math.exp,
-    'log': math.log,    # Logaritmo natural
-    'log10': math.log10, # Logaritmo base 10
+    'log': math.log,
+    'log10': math.log10,
     'sqrt': math.sqrt,
     'pow': math.pow,
     'pi': math.pi,
@@ -20,6 +21,7 @@ SAFE_MATH_FUNCTIONS = {
 }
 
 def _crear_funcion_segura(funcion_str: str) -> Callable[[float], float]:
+    """Crea una función Python segura desde un string (para métodos sin derivada)."""
     if any(c in funcion_str for c in '[]_{}'):
         raise ValueError("La función contiene caracteres no permitidos.")
     code = compile(funcion_str, "<string>", "eval")
@@ -31,6 +33,32 @@ def _crear_funcion_segura(funcion_str: str) -> Callable[[float], float]:
         except Exception as e:
             raise ValueError(f"Error al evaluar f({x}): {e}")
     return funcion_evaluada
+
+def _crear_funcion_y_derivada_segura(funcion_str: str) -> Dict[str, Any]:
+    """
+    Crea una función y su derivada usando SymPy.
+    """
+    x = sp.Symbol('x')
+    try:
+        funcion_str_sympy = funcion_str.replace('^', '**')
+        f_sym = sp.sympify(funcion_str_sympy)
+        df_sym = sp.diff(f_sym, x)
+        
+        f_lambda = sp.lambdify(x, f_sym, modules='math')
+        df_lambda = sp.lambdify(x, df_sym, modules='math')
+        
+        return {
+            'f': f_lambda,
+            'df': df_lambda,
+            'f_str': str(f_sym),
+            'df_str': str(df_sym)
+        }
+        
+    except Exception as e:
+        raise ValueError(f"Error procesando la función con SymPy: {e}")
+
+
+# --- METODOS DE INTERVALO (Bisección y Falsa Posición) ---
 
 def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
     pasos: List[str] = []
@@ -52,8 +80,6 @@ def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, ma
     
     pasos.append("\n--- Iniciando iteraciones (Bisección) ---")
     
-    # --- TABLA SÚPER ESPACIOSA ---
-    # Hemos aumentado drásticamente el ancho (^22 y ^24) para que sobre espacio a los lados
     header = f"| {'Iter':^8} | {'a':^22} | {'b':^22} | {'f(a)':^24} | {'f(b)':^24} | {'xr':^22} | {'f(xr)':^24} | {'Error':^24} |"
     separador = "-" * len(header)
     
@@ -67,11 +93,10 @@ def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, ma
         if i > 0:
             if abs(xr_nuevo) < 1e-10: error = abs(xr_nuevo - xr_anterior)
             else: error = abs((xr_nuevo - xr_anterior) / xr_nuevo)
-            error_str = f"{error:^24.5e}" # Centrado en 24 espacios
+            error_str = f"{error:^24.5e}"
         else:
             error_str = f"{'N/A':^24}"
 
-        # Fila de datos: Usamos los mismos anchos masivos (22 y 24)
         paso_str = (
             f"| {i+1:^8d} | {a:^22.8f} | {b:^22.8f} | {fa:^24.5e} | {fb:^24.5e} | "
             f"{xr_nuevo:^22.8f} | {fxr:^24.5e} | {error_str} |"
@@ -122,7 +147,6 @@ def metodo_falsa_posicion(funcion_str: str, a: float, b: float, tolerancia: floa
     
     pasos.append("\n--- Iniciando iteraciones (Falsa Posición) ---")
     
-    # --- TABLA SÚPER ESPACIOSA (Mismo formato) ---
     header = f"| {'Iter':^8} | {'a':^22} | {'b':^22} | {'f(a)':^24} | {'f(b)':^24} | {'xr':^22} | {'f(xr)':^24} | {'Error':^24} |"
     separador = "-" * len(header)
     
@@ -171,3 +195,138 @@ def metodo_falsa_posicion(funcion_str: str, a: float, b: float, tolerancia: floa
         
     pasos.append(separador)
     return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 'raiz': xr_nuevo, 'iteraciones': max_iter, 'error': error, 'pasos': pasos}
+
+# --- METODOS ABIERTOS (Newton y Secante) ---
+
+def metodo_newton_raphson(funcion_str: str, x0: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
+    pasos: List[str] = []
+    try:
+        helpers = _crear_funcion_y_derivada_segura(funcion_str)
+        f = helpers['f']
+        df = helpers['df']
+        pasos.append(f"Función f(x) = {helpers['f_str']}")
+        pasos.append(f"Derivada f'(x) = {helpers['df_str']}")
+        pasos.append(f"Punto inicial x0 = {x0}")
+        
+    except Exception as e:
+         return {'estado': 'error', 'mensaje': str(e), 'pasos': pasos}
+
+    xi = x0
+    error = 1.0
+    x_nuevo = x0 
+    
+    pasos.append("\n--- Iniciando iteraciones (Newton-Raphson) ---")
+    
+    header_f_prime = "f'(xi)"
+    header = f"| {'Iter':^8} | {'xi':^22} | {'f(xi)':^24} | {header_f_prime:^24} | {'xi+1':^22} | {'Error':^24} |"
+    separador = "-" * len(header)
+    
+    pasos.append(separador)
+    pasos.append(header)
+    pasos.append(separador)
+    
+    for i in range(max_iter):
+        f_xi = f(xi)
+        df_xi = df(xi)
+        
+        if abs(df_xi) < 1e-10:
+            pasos.append(separador)
+            pasos.append(f"\nError: Derivada cero encontrada en f'({xi:.6f}) = {df_xi:.6e}.")
+            return {'estado': 'error', 'mensaje': f"División por cero: La derivada es cero en x = {xi}", 'pasos': pasos}
+            
+        x_nuevo = xi - (f_xi / df_xi)
+        
+        if abs(x_nuevo) < 1e-10:
+            error = abs(x_nuevo - xi)
+        else:
+            error = abs((x_nuevo - xi) / x_nuevo)
+            
+        error_str = f"{error:^24.5e}" if i > 0 else f"{'N/A':^24}"
+
+        paso_str = (
+            f"| {i+1:^8d} | {xi:^22.8f} | {f_xi:^24.5e} | {df_xi:^24.5e} | "
+            f"{x_nuevo:^22.8f} | {error_str} |"
+        )
+        pasos.append(paso_str)
+
+        if i > 0 and error < tolerancia:
+            pasos.append(separador)
+            pasos.append(f"\nConvergencia alcanzada en la iteración {i+1}.")
+            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': error, 'pasos': pasos}
+            
+        if abs(f_xi) < 1e-14: 
+            pasos.append(separador)
+            pasos.append(f"\nRaíz exacta encontrada en la iteración {i+1} (xi={xi}).")
+            return {'estado': 'exito', 'raiz': xi, 'iteraciones': i+1, 'error': 0.0, 'pasos': pasos}
+        
+        xi = x_nuevo 
+        
+    pasos.append(separador)
+    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 'raiz': xi, 'iteraciones': max_iter, 'error': error, 'pasos': pasos}
+
+
+def metodo_secante(funcion_str: str, x0: float, x1: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
+    pasos: List[str] = []
+    try:
+        f = _crear_funcion_segura(funcion_str.replace('math.', ''))
+        pasos.append(f"Punto inicial x0 = {x0}")
+        pasos.append(f"Punto inicial x1 = {x1}")
+    except Exception as e:
+         return {'estado': 'error', 'mensaje': str(e), 'pasos': pasos}
+
+    error = 1.0
+    x_nuevo = x1 
+    
+    pasos.append("\n--- Iniciando iteraciones (Secante) ---")
+    
+    header = f"| {'Iter':^8} | {'x_i-1':^20} | {'x_i':^20} | {'f(x_i-1)':^24} | {'f(x_i)':^24} | {'x_i+1':^20} | {'Error':^24} |"
+    separador = "-" * len(header)
+    
+    pasos.append(separador)
+    pasos.append(header)
+    pasos.append(separador)
+    
+    for i in range(max_iter):
+        f_x0 = f(x0)
+        f_x1 = f(x1)
+        
+        denominador = f_x0 - f_x1
+        if abs(denominador) < 1e-10:
+            pasos.append(separador)
+            pasos.append(f"\nError: Denominador cero (f(x_i-1) - f(x_i) \approx 0).")
+            return {'estado': 'error', 'mensaje': "División por cero: f(x0) y f(x1) son demasiado similares.", 'pasos': pasos}
+            
+        x_nuevo = x1 - (f_x1 * (x0 - x1)) / denominador
+        
+        if abs(x_nuevo) < 1e-10:
+            error = abs(x_nuevo - x1)
+        else:
+            error = abs((x_nuevo - x1) / x_nuevo)
+            
+        error_str = f"{error:^24.5e}" if i > 0 else f"{'N/A':^24}"
+
+        paso_str = (
+            f"| {i+1:^8d} | {x0:^20.8f} | {x1:^20.8f} | {f_x0:^24.5e} | {f_x1:^24.5e} | "
+            f"{x_nuevo:^20.8f} | {error_str} |"
+        )
+        pasos.append(paso_str)
+
+        # --- CORRECCIÓN LÍNEA 324 (aprox) ---
+        if i > 0 and error < tolerancia:
+            pasos.append(separador)
+            pasos.append(f"\nConvergencia alcanzada en la iteración {i+1}.")
+            # Antes decía 'xr_nuevo', ahora 'x_nuevo'
+            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': error, 'pasos': pasos}
+            
+        # --- CORRECCIÓN LÍNEA 329 (aprox) ---
+        if abs(f(x_nuevo)) < 1e-14:
+            pasos.append(separador)
+            pasos.append(f"\nRaíz exacta encontrada en la iteración {i+1}.")
+            # Antes decía 'xr_nuevo', ahora 'x_nuevo'
+            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': 0.0, 'pasos': pasos}
+        
+        x0 = x1
+        x1 = x_nuevo
+        
+    pasos.append(separador)
+    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 'raiz': x1, 'iteraciones': max_iter, 'error': error, 'pasos': pasos}

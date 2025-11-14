@@ -15,6 +15,7 @@ class PaginaMetodosNumericos(PaginaBase):
     def crear_widgets(self):
         self.configurar_grid()
         self.crear_interfaz()
+        self._actualizar_entradas_metodo()
     
     def configurar_grid(self):
         self.grid_rowconfigure(0, weight=0)
@@ -33,12 +34,13 @@ class PaginaMetodosNumericos(PaginaBase):
                     font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, padx=(12, 8), pady=12)
         
         self.metodo_numerico_var = ctk.StringVar(value="Biseccion")
-        # Agregamos "Falsa Posicion" a la lista
-        metodos = ["Biseccion", "Falsa Posicion"]
+        
+        metodos = ["Biseccion", "Falsa Posicion", "Newton-Raphson", "Secante"]
         
         for i, metodo in enumerate(metodos):
             rb = ctk.CTkRadioButton(marco_metodo, text=metodo, variable=self.metodo_numerico_var, 
-                                   value=metodo, font=ctk.CTkFont(size=13))
+                                   value=metodo, font=ctk.CTkFont(size=13),
+                                   command=self._actualizar_entradas_metodo)
             rb.grid(row=0, column=i+1, padx=8, pady=12)
 
         # Entrada de Funcion
@@ -50,16 +52,18 @@ class PaginaMetodosNumericos(PaginaBase):
         self.ent_funcion_fx = ctk.CTkEntry(marco_funcion, placeholder_text="Ej: cos(x) - x  (usar 'x' como variable)")
         self.ent_funcion_fx.grid(row=0, column=1, columnspan=5, sticky="ew", padx=8, pady=6)
         
-        # Fila 1: Intervalo y Tolerancia
-        ctk.CTkLabel(marco_funcion, text="Intervalo [a, b]:", font=ctk.CTkFont(size=13)).grid(row=1, column=0, sticky="w", padx=8, pady=6)
+        # Fila 1: Entradas de Intervalo/Puntos
+        self.lbl_intervalo = ctk.CTkLabel(marco_funcion, text="Intervalo [a, b]:", font=ctk.CTkFont(size=13))
+        self.lbl_intervalo.grid(row=1, column=0, sticky="w", padx=8, pady=6)
+        
         self.ent_intervalo_a = ctk.CTkEntry(marco_funcion, width=100, placeholder_text="a")
         self.ent_intervalo_a.grid(row=1, column=1, sticky="w", padx=(8,2), pady=6)
+        
         self.ent_intervalo_b = ctk.CTkEntry(marco_funcion, width=100, placeholder_text="b")
         self.ent_intervalo_b.grid(row=1, column=2, sticky="w", padx=(2,8), pady=6)
         
         ctk.CTkLabel(marco_funcion, text="Tolerancia (E):", font=ctk.CTkFont(size=13)).grid(row=1, column=3, sticky="w", padx=(20, 2), pady=6)
         self.ent_tolerancia_e = ctk.CTkEntry(marco_funcion, width=100, placeholder_text="Ej: 0.0001")
-        # Valor por defecto inicial
         self.ent_tolerancia_e.insert(0, "0.0001")
         self.ent_tolerancia_e.grid(row=1, column=4, sticky="w", padx=(2, 8), pady=6)
         
@@ -85,7 +89,6 @@ class PaginaMetodosNumericos(PaginaBase):
         ctk.CTkButton(marco_controles, text="Limpiar", command=self.limpiar_numerico,
                       fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER).grid(row=0, column=1, padx=6)
 
-        # Botón para graficar función
         ctk.CTkButton(marco_controles, text="Graficar Funcion", command=self.graficar_funcion_interna,
                       fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER).grid(row=0, column=2, padx=6)
 
@@ -120,12 +123,29 @@ class PaginaMetodosNumericos(PaginaBase):
         self.resultado_caja = ctk.CTkTextbox(marco_resultado, height=220, font=ctk.CTkFont(family="monospace", size=12))
         self.resultado_caja.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0,8))
 
+    def _actualizar_entradas_metodo(self):
+        metodo = self.metodo_numerico_var.get()
+        
+        if metodo in ["Biseccion", "Falsa Posicion"]:
+            self.lbl_intervalo.configure(text="Intervalo [a, b]:")
+            self.ent_intervalo_a.configure(placeholder_text="a")
+            self.ent_intervalo_b.configure(placeholder_text="b")
+            self.ent_intervalo_b.grid() 
+        elif metodo == "Newton-Raphson":
+            self.lbl_intervalo.configure(text="Punto Inicial (x0):")
+            self.ent_intervalo_a.configure(placeholder_text="x0")
+            self.ent_intervalo_b.grid_remove() 
+        elif metodo == "Secante":
+            self.lbl_intervalo.configure(text="Puntos [x0, x1]:")
+            self.ent_intervalo_a.configure(placeholder_text="x0")
+            self.ent_intervalo_b.configure(placeholder_text="x1")
+            self.ent_intervalo_b.grid() 
+
     def cargar_ejemplo(self, ej_num: int):
-        # Limpiamos todo primero (esto ya pone la tolerancia por defecto)
         self.limpiar_numerico()
         
-        # --- CORRECCIÓN: Borrar el campo de tolerancia antes de insertar el del ejemplo
-        # para evitar que se duplique (ej: 0.00010.0001)
+        # --- CORRECCIÓN DEL BUG: ELIMINADAS LAS LÍNEAS DE RESET ---
+        
         self.ent_tolerancia_e.delete(0, 'end')
         
         if ej_num == 1:
@@ -143,12 +163,19 @@ class PaginaMetodosNumericos(PaginaBase):
             self.ent_intervalo_a.insert(0, "-2")
             self.ent_intervalo_b.insert(0, "2")
             self.ent_tolerancia_e.insert(0, "0.0001")
+            
+        # Alerta: Los ejemplos ahora solo llenan los campos, pero 
+        # si el usuario está en Newton, solo verá el campo "a" (ahora x0) llenarse.
 
     def calcular_operacion_numerica(self):
         try:
-            # Importar modulo de metodos numericos incluyendo la nueva función
             try:
-                from MetodosNumericos import metodo_biseccion, metodo_falsa_posicion
+                from MetodosNumericos import (
+                    metodo_biseccion, 
+                    metodo_falsa_posicion, 
+                    metodo_newton_raphson, 
+                    metodo_secante
+                )
             except ImportError:
                 self.resultado_caja.delete('0.0', 'end')
                 self.resultado_caja.insert('0.0', "ERROR: No se pudo cargar MetodosNumericos.py.")
@@ -156,35 +183,58 @@ class PaginaMetodosNumericos(PaginaBase):
 
             metodo = self.metodo_numerico_var.get()
             
-            # Leer entradas comunes
             try:
                 funcion_str = self.ent_funcion_fx.get()
-                a_str = self.ent_intervalo_a.get()
-                b_str = self.ent_intervalo_b.get()
                 tol_str = self.ent_tolerancia_e.get()
                 
-                if not funcion_str or not a_str or not b_str or not tol_str:
-                    raise ValueError("Todos los campos son obligatorios.")
+                if not funcion_str or not tol_str:
+                    raise ValueError("La función y la tolerancia son obligatorias.")
                 
-                a = parse_valor(a_str)
-                b = parse_valor(b_str)
                 tolerancia = parse_valor(tol_str)
-                
                 if tolerancia <= 0:
                     raise ValueError("La tolerancia debe ser un numero positivo.")
-                if a >= b:
-                    raise ValueError("El intervalo es invalido (a debe ser menor que b).")
 
-                # Selección del método
-                res = None
-                if metodo == 'Biseccion':
-                    res = metodo_biseccion(funcion_str, a, b, tolerancia)
-                elif metodo == 'Falsa Posicion':
-                    res = metodo_falsa_posicion(funcion_str, a, b, tolerancia)
+                res = None 
+                
+                if metodo == 'Biseccion' or metodo == 'Falsa Posicion':
+                    a_str = self.ent_intervalo_a.get()
+                    b_str = self.ent_intervalo_b.get()
+                    if not a_str or not b_str:
+                        raise ValueError("Los campos 'a' y 'b' son obligatorios.")
+                    
+                    a = parse_valor(a_str)
+                    b = parse_valor(b_str)
+                    if a >= b:
+                        raise ValueError("El intervalo es invalido (a debe ser menor que b).")
+
+                    if metodo == 'Biseccion':
+                        res = metodo_biseccion(funcion_str, a, b, tolerancia)
+                    else: 
+                        res = metodo_falsa_posicion(funcion_str, a, b, tolerancia)
+                
+                elif metodo == 'Newton-Raphson':
+                    x0_str = self.ent_intervalo_a.get()
+                    if not x0_str:
+                        raise ValueError("El punto inicial 'x0' es obligatorio.")
+                    
+                    x0 = parse_valor(x0_str)
+                    res = metodo_newton_raphson(funcion_str, x0, tolerancia)
+
+                elif metodo == 'Secante':
+                    x0_str = self.ent_intervalo_a.get()
+                    x1_str = self.ent_intervalo_b.get()
+                    if not x0_str or not x1_str:
+                        raise ValueError("Los puntos 'x0' y 'x1' son obligatorios.")
+                    
+                    x0 = parse_valor(x0_str)
+                    x1 = parse_valor(x1_str)
+                    if x0 == x1:
+                         raise ValueError("Los puntos iniciales no pueden ser iguales.")
+                    res = metodo_secante(funcion_str, x0, x1, tolerancia)
+
                 else:
                     raise ValueError("Método no implementado")
                 
-                # Mostrar Resultados
                 self.pasos_caja.delete('0.0', 'end')
                 self.pasos_caja.insert('0.0', '\n'.join(res.get('pasos', ['No se generaron pasos.'])))
                 
@@ -220,7 +270,6 @@ class PaginaMetodosNumericos(PaginaBase):
             self.resultado_caja.insert('0.0', f"Error general: {e}")
 
     def graficar_funcion_interna(self):
-        """Grafica función usando sympy."""
         try:
             funcion_str = self.ent_funcion_fx.get()
             if not funcion_str:
@@ -228,13 +277,22 @@ class PaginaMetodosNumericos(PaginaBase):
 
             a_str = self.ent_intervalo_a.get()
             b_str = self.ent_intervalo_b.get()
+            metodo = self.metodo_numerico_var.get()
             
-            a = -10 if not a_str else parse_valor(a_str)
-            b = 10 if not b_str else parse_valor(b_str)
+            a, b = -10, 10 
             
-            if a >= b:
-                raise ValueError("El intervalo es inválido (a debe ser menor que b).")
-
+            try:
+                if metodo in ["Biseccion", "Falsa Posicion", "Secante"] and a_str and b_str:
+                    a = parse_valor(a_str)
+                    b = parse_valor(b_str)
+                    if a > b: a, b = b, a 
+                elif metodo == "Newton-Raphson" and a_str:
+                    x0 = parse_valor(a_str)
+                    a = x0 - 5 
+                    b = x0 + 5
+            except:
+                pass 
+            
             ventana_grafica = ctk.CTkToplevel(self)
             ventana_grafica.title(f"Gráfica de f(x) = {funcion_str}")
             ventana_grafica.geometry("1000x700")
@@ -258,58 +316,60 @@ class PaginaMetodosNumericos(PaginaBase):
                 ax.plot(x, y, 'b-', linewidth=2.5, label=f'f(x) = {funcion_str}', alpha=0.8)
                 ax.axhline(y=0, color='black', linewidth=1.5, alpha=0.7)
                 ax.axvline(x=0, color='black', linewidth=1.5, alpha=0.7)
-                ax.axvline(x=a, color='red', linestyle='--', alpha=0.6, linewidth=1, label=f'a = {a}')
-                ax.axvline(x=b, color='green', linestyle='--', alpha=0.6, linewidth=1, label=f'b = {b}')
-                ax.axvspan(a, b, alpha=0.1, color='gray', label='Intervalo de búsqueda')
+                
+                if metodo in ["Biseccion", "Falsa Posicion", "Secante"] and a_str and b_str:
+                    a_val = parse_valor(a_str)
+                    b_val = parse_valor(b_str)
+                    ax.axvline(x=a_val, color='red', linestyle='--', alpha=0.6, linewidth=1, label=f'a/x0 = {a_val}')
+                    ax.axvline(x=b_val, color='green', linestyle='--', alpha=0.6, linewidth=1, label=f'b/x1 = {b_val}')
+                    ax.axvspan(min(a_val, b_val), max(a_val, b_val), alpha=0.1, color='gray', label='Intervalo inicial')
+                elif metodo == "Newton-Raphson" and a_str:
+                     x0_val = parse_valor(a_str)
+                     ax.axvline(x=x0_val, color='red', linestyle='--', alpha=0.6, linewidth=1, label=f'x0 = {x0_val}')
+                
                 ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
                 ax.set_axisbelow(True)
                 ax.set_xlabel('x', fontsize=12, fontweight='bold')
                 ax.set_ylabel('f(x)', fontsize=12, fontweight='bold')
-                ax.set_title(f'Gráfica de f(x) = {funcion_str}\nIntervalo: [{a}, {b}]', 
+                ax.set_title(f'Gráfica de f(x) = {funcion_str}\nRango de ploteo: [{a:.2f}, {b:.2f}]', 
                            fontsize=14, fontweight='bold', pad=20)
                 ax.tick_params(axis='both', which='major', labelsize=10)
                 
-                y_min, y_max = np.nanmin(y), np.nanmax(y)
-                y_range = y_max - y_min if y_max != y_min else 2
-                ax.set_ylim(y_min - 0.1*y_range, y_max + 0.1*y_range)
+                y_clean = y[np.isfinite(y)]
+                if len(y_clean) > 0:
+                    y_min, y_max = np.nanmin(y_clean), np.nanmax(y_clean)
+                    y_range = y_max - y_min if y_max != y_min else 2
+                    ax.set_ylim(y_min - 0.1*y_range, y_max + 0.1*y_range)
+                
                 ax.legend(loc='best', fontsize=10, framealpha=0.9, shadow=True)
                 
-                # Intentar marcar raíz si existe en resultados
                 contenido = self.resultado_caja.get('1.0', 'end-1c')
                 if 'Raiz encontrada' in contenido:
                     lineas = contenido.split('\n')
                     try:
-                        for line in lineas:
-                            if 'Raiz encontrada' in line:
-                                # Buscar la linea siguiente que tiene el valor
-                                idx = lineas.index(line)
-                                if idx + 1 < len(lineas):
-                                    raiz_str = lineas[idx+1].strip()
-                                    raiz = float(raiz_str)
-                                    f_raiz = float(funcion_sympy.subs(x_sym, raiz))
+                        for idx, line in enumerate(lineas):
+                            if 'Raiz encontrada' in line and idx + 1 < len(lineas):
+                                raiz_str = lineas[idx+1].strip()
+                                raiz = float(raiz_str)
+                                if a <= raiz <= b: 
+                                    f_raiz = float(funcion_lambdified(raiz))
                                     ax.plot(raiz, f_raiz, 'ro', markersize=10, 
                                            label=f'Raíz ≈ {raiz:.6f}', zorder=5)
-                                    ax.plot([raiz, raiz], [0, f_raiz], 'r--', alpha=0.7, linewidth=1)
                                     ax.annotate(f'x ≈ {raiz:.6f}', 
-                                               xy=(raiz, f_raiz), 
-                                               xytext=(10, 20), 
-                                               textcoords='offset points',
-                                               fontsize=10,
+                                               xy=(raiz, f_raiz), xytext=(10, 20), 
+                                               textcoords='offset points', fontsize=10,
                                                bbox=dict(boxstyle="round,pad=0.3", facecolor="yellow", alpha=0.7),
                                                arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"))
                                     ax.legend(loc='best', fontsize=9)
                                     break
                     except:
-                        pass
+                        pass 
 
             except Exception as e:
                 ax.text(0.5, 0.5, f'Error al graficar la función:\n\n{str(e)}', 
                        horizontalalignment='center', verticalalignment='center',
                        transform=ax.transAxes, fontsize=12, color='red',
                        bbox=dict(boxstyle="round,pad=1", facecolor="lightcoral", alpha=0.8))
-                ax.set_xlim(0, 1)
-                ax.set_ylim(0, 1)
-                ax.set_title('Error en la gráfica', fontsize=14, fontweight='bold', color='red')
 
             canvas = FigureCanvasTkAgg(fig, ventana_grafica)
             canvas.draw()
@@ -355,14 +415,15 @@ class PaginaMetodosNumericos(PaginaBase):
             self.ent_intervalo_a.delete(0, 'end')
         if hasattr(self, 'ent_intervalo_b'):
             self.ent_intervalo_b.delete(0, 'end')
+            
         if hasattr(self, 'ent_tolerancia_e'):
             self.ent_tolerancia_e.delete(0, 'end')
-            self.ent_tolerancia_e.insert(0, "0.0001") # Restaurar valor por defecto al limpiar
+            self.ent_tolerancia_e.insert(0, "0.0001") 
             
         if hasattr(self, 'pasos_caja'):
             self.pasos_caja.delete('0.0', 'end')
         if hasattr(self, 'resultado_caja'):
             self.resultado_caja.delete('0.0', 'end')
-
+            
     def mostrar(self):
         self.grid(row=0, column=0, sticky="nsew")

@@ -1,7 +1,5 @@
 import customtkinter as ctk
-import os
-import subprocess
-import tkinter.messagebox # Importante para mostrar alertas si algo falla
+# Eliminados imports: os, webbrowser, pathlib, tkinter.messagebox
 
 from app_config import COLOR_BOTON_SECUNDARIO, COLOR_BOTON_SECUNDARIO_HOVER, COLOR_ACENTO, COLOR_HOVER, COLOR_ALGEBRA, COLOR_NUMERICOS
 from paginas.pagina_inicio import PaginaInicio
@@ -19,8 +17,8 @@ class AplicacionPrincipal(ctk.CTk):
         self.geometry("1200x800")
         self.minsize(1000, 700)
         
-        # --- VARIABLES DE ESTADO ---
-        self.menu_visible = False # Inicia oculto
+        # --- VARIABLES DE ESTADO --
+        self.menu_visible = False 
         self.ancho_menu = 280
 
         # Configurar grid principal
@@ -65,10 +63,11 @@ class AplicacionPrincipal(ctk.CTk):
         self.marco_nav.grid(row=0, column=0, sticky="nswe")
         self.marco_nav.grid_propagate(False)
         
-        # Configuración de filas
-        self.marco_nav.grid_rowconfigure(9, weight=1)  # Espaciador
-        self.marco_nav.grid_rowconfigure(10, weight=0) # Botón Rojo
-        self.marco_nav.grid_rowconfigure(11, weight=0) # Configuración
+        # --- CONFIGURACIÓN DE FILAS (Vuelve a la normalidad) ---
+        # Fila 9: Espaciador
+        # Fila 10: Configuración
+        self.marco_nav.grid_rowconfigure(9, weight=1)  # El espaciador flexible
+        self.marco_nav.grid_rowconfigure(10, weight=0) # La config
         self.marco_nav.grid_columnconfigure(0, weight=1)
         
         # -- Contenido del Menú --
@@ -110,20 +109,15 @@ class AplicacionPrincipal(ctk.CTk):
                       fg_color=COLOR_NUMERICOS, hover_color=COLOR_HOVER,
                       command=lambda: self.mostrar_pagina("metodos_numericos")).grid(row=8, column=0, sticky="ew", padx=12, pady=3)
 
-        # Espaciador (Fila 9)
+        # --- ESPACIADOR (Fila 9) ---
         ctk.CTkFrame(self.marco_nav, fg_color="transparent").grid(row=9, column=0, sticky="nsew")
 
-        # BOTÓN SECRETO (Fila 10)
-        self.btn_secreto = ctk.CTkButton(self.marco_nav, text="🚫 NO TOCAR ❯",
-                      font=ctk.CTkFont(size=14, weight="bold"),
-                      fg_color="#E53935", hover_color="#B71C1C",
-                      height=40,
-                      command=self.abrir_secreto_video)
-        self.btn_secreto.grid(row=10, column=0, sticky="ew", padx=12, pady=(10, 0))
+        # --- BOTÓN SECRETO ELIMINADO ---
+        # (Ya no hay nada en la Fila 10 aquí)
 
-        # Configuración (Fila 11)
+        # --- CONFIGURACIÓN INFERIOR (Fila 10) ---
         marco_config = ctk.CTkFrame(self.marco_nav, fg_color="transparent")
-        marco_config.grid(row=11, column=0, sticky="ews", padx=12, pady=20)
+        marco_config.grid(row=10, column=0, sticky="ews", padx=12, pady=20)
         
         self.btn_ayuda = ctk.CTkButton(marco_config, text="📚 Ayuda",
                                      command=self.mostrar_ayuda_sympy,
@@ -174,38 +168,7 @@ class AplicacionPrincipal(ctk.CTk):
             self.marco_nav.configure(width=self.ancho_menu)
             self.menu_visible = True
 
-    def abrir_secreto_video(self):
-        """
-        Abre el archivo de video con verificación de errores y doble extensión.
-        """
-        # Obtiene la carpeta base
-        base_path = os.path.dirname(os.path.abspath(__file__))
-        
-        # Ruta ideal
-        video_path = os.path.join(base_path, "secreto", "himno.mp4")
-        
-        # Verificación robusta
-        if not os.path.exists(video_path):
-            # Intento de corrección de doble extensión (himno.mp4.mp4)
-            ruta_alternativa = os.path.join(base_path, "secreto", "himno.mp4.mp4")
-            if os.path.exists(ruta_alternativa):
-                video_path = ruta_alternativa
-            else:
-                tkinter.messagebox.showerror("Error de Archivo", 
-                    f"No encuentro el video.\n\nBuscando en:\n{video_path}\n\n"
-                    "Asegúrate de:\n1. Crear la carpeta 'secreto'\n2. Poner el archivo 'himno.mp4' dentro.")
-                return
-
-        try:
-            # Abrir según el sistema operativo
-            if os.name == 'nt': # Windows
-                os.startfile(video_path)
-            elif os.name == 'posix': # macOS o Linux
-                if os.system(f'open "{video_path}"') != 0:
-                    # Si falla 'open', intenta 'xdg-open' (Linux)
-                    os.system(f'xdg-open "{video_path}"')
-        except Exception as e:
-            tkinter.messagebox.showerror("Error al abrir", f"No se pudo reproducir el video.\nError: {e}")
+    # --- FUNCIÓN abrir_secreto_video ELIMINADA ---
 
     def toggle_theme(self):
         if self.theme_switch.get() == 1:
