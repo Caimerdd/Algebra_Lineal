@@ -1,13 +1,21 @@
 import customtkinter as ctk
-# Eliminados imports: os, webbrowser, pathlib, tkinter.messagebox
-
-from app_config import COLOR_BOTON_SECUNDARIO, COLOR_BOTON_SECUNDARIO_HOVER, COLOR_ACENTO, COLOR_HOVER, COLOR_ALGEBRA, COLOR_NUMERICOS
+# --- IMPORTACIONES MODIFICADAS ---
+from app_config import (COLOR_BOTON_SECUNDARIO, COLOR_BOTON_SECUNDARIO_HOVER, 
+                        COLOR_ACENTO, COLOR_HOVER, COLOR_ALGEBRA, COLOR_NUMERICOS,
+                        COLOR_FUNDAMENTOS, COLOR_DIFERENCIAL, COLOR_INTEGRAL)
+# ---------------------------------
 from paginas.pagina_inicio import PaginaInicio
 from paginas.pagina_sistemas_ecuaciones import PaginaSistemasEcuaciones
 from paginas.pagina_operaciones_matriciales import PaginaOperacionesMatriciales
 from paginas.pagina_propiedades_matrices import PaginaPropiedadesMatrices
 from paginas.pagina_metodos_numericos import PaginaMetodosNumericos
 from ui_components.ventana_ayuda import VentanaAyudaSymPy
+
+# --- IMPORTACIONES NUEVAS ---
+from paginas.pagina_fundamentos import PaginaFundamentos
+from paginas.pagina_diferencial import PaginaDiferencial
+from paginas.pagina_integral import PaginaIntegral
+# ----------------------------
 
 class AplicacionPrincipal(ctk.CTk):
     def __init__(self):
@@ -17,11 +25,9 @@ class AplicacionPrincipal(ctk.CTk):
         self.geometry("1200x800")
         self.minsize(1000, 700)
         
-        # --- VARIABLES DE ESTADO --
         self.menu_visible = False 
         self.ancho_menu = 280
 
-        # Configurar grid principal
         self.grid_rowconfigure(0, weight=1)
         self.grid_columnconfigure(0, weight=0) 
         self.grid_columnconfigure(1, weight=1)
@@ -35,11 +41,18 @@ class AplicacionPrincipal(ctk.CTk):
 
     def inicializar_paginas(self):
         self.paginas = {}
+        
         self.paginas["inicio"] = PaginaInicio(self.area_contenido, self)
         self.paginas["sistemas_ecuaciones"] = PaginaSistemasEcuaciones(self.area_contenido, self)
         self.paginas["operaciones_matriciales"] = PaginaOperacionesMatriciales(self.area_contenido, self)
         self.paginas["propiedades_matrices"] = PaginaPropiedadesMatrices(self.area_contenido, self)
         self.paginas["metodos_numericos"] = PaginaMetodosNumericos(self.area_contenido, self)
+        
+        # --- NUEVAS PÁGINAS INICIALIZADAS ---
+        self.paginas["fundamentos"] = PaginaFundamentos(self.area_contenido, self)
+        self.paginas["diferencial"] = PaginaDiferencial(self.area_contenido, self)
+        self.paginas["integral"] = PaginaIntegral(self.area_contenido, self)
+        # -------------------------------------
         
         for pagina in self.paginas.values():
             pagina.grid_remove()
@@ -63,11 +76,10 @@ class AplicacionPrincipal(ctk.CTk):
         self.marco_nav.grid(row=0, column=0, sticky="nswe")
         self.marco_nav.grid_propagate(False)
         
-        # --- CONFIGURACIÓN DE FILAS (Vuelve a la normalidad) ---
-        # Fila 9: Espaciador
-        # Fila 10: Configuración
-        self.marco_nav.grid_rowconfigure(9, weight=1)  # El espaciador flexible
-        self.marco_nav.grid_rowconfigure(10, weight=0) # La config
+        # --- CONFIGURACIÓN DE FILAS MODIFICADA ---
+        # Aumentamos los números de fila para dar espacio a los nuevos botones
+        self.marco_nav.grid_rowconfigure(15, weight=1)  # Espaciador
+        self.marco_nav.grid_rowconfigure(16, weight=0) # Configuración
         self.marco_nav.grid_columnconfigure(0, weight=1)
         
         # -- Contenido del Menú --
@@ -83,8 +95,8 @@ class AplicacionPrincipal(ctk.CTk):
         
         ctk.CTkFrame(self.marco_nav, height=2).grid(row=2, column=0, sticky="ew", padx=10, pady=5)
         
-        # Algebra
-        ctk.CTkLabel(self.marco_nav, text="ALGEBRA LINEAL", 
+        # Algebra (Filas 3-6)
+        ctk.CTkLabel(self.marco_nav, text="ÁLGEBRA LINEAL", 
                     font=ctk.CTkFont(size=12, weight="bold"), 
                     text_color=COLOR_ALGEBRA).grid(row=3, column=0, sticky="w", padx=15, pady=(10, 5))
         
@@ -100,8 +112,8 @@ class AplicacionPrincipal(ctk.CTk):
                       fg_color=COLOR_ALGEBRA, hover_color=COLOR_HOVER,
                       command=lambda: self.mostrar_pagina("propiedades_matrices")).grid(row=6, column=0, sticky="ew", padx=12, pady=3)
         
-        # Numericos
-        ctk.CTkLabel(self.marco_nav, text="METODOS NUMERICOS", 
+        # Numericos (Filas 7-8)
+        ctk.CTkLabel(self.marco_nav, text="MÉTODOS NUMÉRICOS", 
                     font=ctk.CTkFont(size=12, weight="bold"),
                     text_color=COLOR_NUMERICOS).grid(row=7, column=0, sticky="w", padx=15, pady=(15, 5))
         
@@ -109,15 +121,36 @@ class AplicacionPrincipal(ctk.CTk):
                       fg_color=COLOR_NUMERICOS, hover_color=COLOR_HOVER,
                       command=lambda: self.mostrar_pagina("metodos_numericos")).grid(row=8, column=0, sticky="ew", padx=12, pady=3)
 
-        # --- ESPACIADOR (Fila 9) ---
-        ctk.CTkFrame(self.marco_nav, fg_color="transparent").grid(row=9, column=0, sticky="nsew")
+        # --- SECCIÓN FUNDAMENTOS (Filas 9-10) ---
+        ctk.CTkLabel(self.marco_nav, text="FUNDAMENTOS DE ÁLGEBRA", 
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    text_color=COLOR_FUNDAMENTOS).grid(row=9, column=0, sticky="w", padx=15, pady=(15, 5))
+        ctk.CTkButton(self.marco_nav, text="   Funciones y Polinomios", anchor="w",
+                      fg_color=COLOR_FUNDAMENTOS, hover_color=COLOR_HOVER,
+                      command=lambda: self.mostrar_pagina("fundamentos")).grid(row=10, column=0, sticky="ew", padx=12, pady=3)
 
-        # --- BOTÓN SECRETO ELIMINADO ---
-        # (Ya no hay nada en la Fila 10 aquí)
+        # --- SECCIÓN CÁLCULO DIFERENCIAL (Filas 11-12) ---
+        ctk.CTkLabel(self.marco_nav, text="CÁLCULO DIFERENCIAL", 
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    text_color=COLOR_DIFERENCIAL).grid(row=11, column=0, sticky="w", padx=15, pady=(15, 5))
+        ctk.CTkButton(self.marco_nav, text="   Límites y Derivadas", anchor="w",
+                      fg_color=COLOR_DIFERENCIAL, hover_color=COLOR_HOVER,
+                      command=lambda: self.mostrar_pagina("diferencial")).grid(row=12, column=0, sticky="ew", padx=12, pady=3)
 
-        # --- CONFIGURACIÓN INFERIOR (Fila 10) ---
+        # --- SECCIÓN CÁLCULO INTEGRAL (Filas 13-14) ---
+        ctk.CTkLabel(self.marco_nav, text="CÁLCULO INTEGRAL", 
+                    font=ctk.CTkFont(size=12, weight="bold"),
+                    text_color=COLOR_INTEGRAL).grid(row=13, column=0, sticky="w", padx=15, pady=(15, 5))
+        ctk.CTkButton(self.marco_nav, text="   Integrales y Series", anchor="w",
+                      fg_color=COLOR_INTEGRAL, hover_color=COLOR_HOVER,
+                      command=lambda: self.mostrar_pagina("integral")).grid(row=14, column=0, sticky="ew", padx=12, pady=3)
+
+        # --- ESPACIADOR (Fila 15) ---
+        ctk.CTkFrame(self.marco_nav, fg_color="transparent").grid(row=15, column=0, sticky="nsew")
+
+        # --- CONFIGURACIÓN INFERIOR (Fila 16) ---
         marco_config = ctk.CTkFrame(self.marco_nav, fg_color="transparent")
-        marco_config.grid(row=10, column=0, sticky="ews", padx=12, pady=20)
+        marco_config.grid(row=16, column=0, sticky="ews", padx=12, pady=20)
         
         self.btn_ayuda = ctk.CTkButton(marco_config, text="📚 Ayuda",
                                      command=self.mostrar_ayuda_sympy,
@@ -139,11 +172,9 @@ class AplicacionPrincipal(ctk.CTk):
         self.marco_derecho.grid_rowconfigure(1, weight=1)
         self.marco_derecho.grid_columnconfigure(0, weight=1)
 
-        # Header
         self.header = ctk.CTkFrame(self.marco_derecho, height=50, corner_radius=0, fg_color="transparent")
         self.header.grid(row=0, column=0, sticky="ew", padx=0, pady=0)
         
-        # Botón Menú
         self.btn_menu = ctk.CTkButton(self.header, text="☰", width=40, height=40,
                                     font=ctk.CTkFont(size=20),
                                     fg_color="transparent",
@@ -152,7 +183,6 @@ class AplicacionPrincipal(ctk.CTk):
                                     command=self.toggle_menu)
         self.btn_menu.pack(side="left", padx=10, pady=5)
 
-        # Área de Contenido
         self.area_contenido = ctk.CTkFrame(self.marco_derecho, corner_radius=0)
         self.area_contenido.grid(row=1, column=0, sticky="nswe", padx=0, pady=0)
         self.area_contenido.grid_rowconfigure(0, weight=1)
@@ -167,8 +197,6 @@ class AplicacionPrincipal(ctk.CTk):
         else:
             self.marco_nav.configure(width=self.ancho_menu)
             self.menu_visible = True
-
-    # --- FUNCIÓN abrir_secreto_video ELIMINADA ---
 
     def toggle_theme(self):
         if self.theme_switch.get() == 1:

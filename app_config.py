@@ -11,8 +11,14 @@ COLOR_FONDO_SECUNDARIO = ("gray92", "#212121")
 COLOR_BOTON_SECUNDARIO = ("gray75", "gray30")
 COLOR_BOTON_SECUNDARIO_HOVER = ("gray80", "gray35")
 
-COLOR_ALGEBRA = ("#2196F3", "#1976D2")
-COLOR_NUMERICOS = ("#00BCD4", "#0097A7")
+# --- Colores de Módulos (Renombrados) ---
+COLOR_ALGEBRA = ("#2196F3", "#1976D2")     # Azul
+COLOR_NUMERICOS = ("#00BCD4", "#0097A7")   # Cian
+COLOR_FUNDAMENTOS = ("#4CAF50", "#388E3C") # Verde
+COLOR_DIFERENCIAL = ("#FF9800", "#F57C00") # Naranja
+COLOR_INTEGRAL = ("#673AB7", "#512DA8")    # Morado
+# ----------------------------------------
+
 COLOR_FONDO_PRINCIPAL = ("#f8f9fa", "#121212")
 COLOR_TARJETA = ("white", "#1e1e1e")
 COLOR_TEXTO_TARJETA = ("#333333", "#ffffff")

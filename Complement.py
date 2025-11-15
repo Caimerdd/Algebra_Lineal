@@ -372,7 +372,12 @@ def resolver_por_cramer(matriz_aumentada: List[List[float]]) -> Dict:
         # Usar la funcion principal que elige el metodo
         resultado_det_a = pasos_determinante(matriz_a)
         if resultado_det_a.get('pasos'):
-            pasos_generales.extend(resultado_det_a['pasos'])
+            # Añadir los pasos del determinante principal
+            for paso in resultado_det_a['pasos']:
+                if isinstance(paso, str):
+                    pasos_generales.append(paso)
+                else:
+                    pasos_generales.append(str(paso))
 
         if resultado_det_a['estado'] == 'error':
             error_msg = resultado_det_a.get('mensaje', 'error desconocido al calcular d')
@@ -393,15 +398,20 @@ def resolver_por_cramer(matriz_aumentada: List[List[float]]) -> Dict:
 
             _anadir_matriz_pasos(matriz_aj, f"matriz para d{j+1} (reemplazando columna {j+1} con b):")
             pasos_generales.append(f"calculando determinante d{j+1} = det(a{j+1}):")
-             # Usar la funcion principal que elige el metodo
+            # Usar la funcion principal que elige el metodo
             resultado_det_aj = pasos_determinante(matriz_aj)
             if resultado_det_aj.get('pasos'):
-                 pasos_generales.extend(resultado_det_aj['pasos'])
+                # Añadir los pasos del determinante de cada matriz
+                for paso in resultado_det_aj['pasos']:
+                    if isinstance(paso, str):
+                        pasos_generales.append(paso)
+                    else:
+                        pasos_generales.append(str(paso))
 
             if resultado_det_aj['estado'] == 'error':
-                 error_msg_j = resultado_det_aj.get('mensaje', f'error desconocido al calcular d{j+1}')
-                 pasos_generales.append(f"error al calcular d{j+1}: {error_msg_j}")
-                 return {'estado': 'error', 'mensaje': f"error al calcular d{j+1}: {error_msg_j}", 'pasos': pasos_generales}
+                error_msg_j = resultado_det_aj.get('mensaje', f'error desconocido al calcular d{j+1}')
+                pasos_generales.append(f"error al calcular d{j+1}: {error_msg_j}")
+                return {'estado': 'error', 'mensaje': f"error al calcular d{j+1}: {error_msg_j}", 'pasos': pasos_generales}
 
             determinante_dj = resultado_det_aj['determinante']
             pasos_generales.append(f"determinante d{j+1} = {_fmt(determinante_dj)}\n")

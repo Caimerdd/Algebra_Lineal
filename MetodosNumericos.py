@@ -1,6 +1,6 @@
 import math
 from typing import Dict, List, Callable, Any
-import sympy as sp # Necesario para calcular la derivada en Newton
+import sympy as sp
 
 # Diccionario de funciones seguras
 SAFE_MATH_FUNCTIONS = {
@@ -21,7 +21,6 @@ SAFE_MATH_FUNCTIONS = {
 }
 
 def _crear_funcion_segura(funcion_str: str) -> Callable[[float], float]:
-    """Crea una función Python segura desde un string (para métodos sin derivada)."""
     if any(c in funcion_str for c in '[]_{}'):
         raise ValueError("La función contiene caracteres no permitidos.")
     code = compile(funcion_str, "<string>", "eval")
@@ -35,9 +34,6 @@ def _crear_funcion_segura(funcion_str: str) -> Callable[[float], float]:
     return funcion_evaluada
 
 def _crear_funcion_y_derivada_segura(funcion_str: str) -> Dict[str, Any]:
-    """
-    Crea una función y su derivada usando SymPy.
-    """
     x = sp.Symbol('x')
     try:
         funcion_str_sympy = funcion_str.replace('^', '**')
@@ -61,31 +57,29 @@ def _crear_funcion_y_derivada_segura(funcion_str: str) -> Dict[str, Any]:
 # --- METODOS DE INTERVALO (Bisección y Falsa Posición) ---
 
 def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
-    pasos: List[str] = []
+    # Lista para info de texto (antes de la tabla)
+    info_previa = []
+    # Lista para los datos de la tabla
+    tabla_data = []
+    
     try:
         f = _crear_funcion_segura(funcion_str.replace('math.', ''))
         fa, fb = f(a), f(b)
-        pasos.append(f"Intervalo inicial: [{a}, {b}]")
-        pasos.append(f"f(a) = {fa:.6e}")
-        pasos.append(f"f(b) = {fb:.6e}")
+        info_previa.append(f"Intervalo inicial: [{a}, {b}]")
+        info_previa.append(f"f(a) = {fa:.6e}")
+        info_previa.append(f"f(b) = {fb:.6e}")
         
         if fa * fb >= 0:
-            return {'estado': 'error', 'mensaje': 'El método no aplica: f(a) y f(b) deben tener signos opuestos.', 'pasos': pasos}
+            return {'estado': 'error', 'mensaje': 'El método no aplica: f(a) y f(b) deben tener signos opuestos.', 'info_previa': info_previa}
     except Exception as e:
-         return {'estado': 'error', 'mensaje': str(e), 'pasos': pasos}
+         return {'estado': 'error', 'mensaje': str(e), 'info_previa': info_previa}
 
     xr_anterior = a 
     xr_nuevo = (a + b) / 2
     error = 1.0
     
-    pasos.append("\n--- Iniciando iteraciones (Bisección) ---")
-    
-    header = f"| {'Iter':^8} | {'a':^22} | {'b':^22} | {'f(a)':^24} | {'f(b)':^24} | {'xr':^22} | {'f(xr)':^24} | {'Error':^24} |"
-    separador = "-" * len(header)
-    
-    pasos.append(separador)
-    pasos.append(header)
-    pasos.append(separador)
+    # Definimos los encabezados de la tabla
+    tabla_headers = ["Iter", "a", "b", "f(a)", "f(b)", "xr", "f(xr)", "Error"]
     
     for i in range(max_iter):
         fxr = f(xr_nuevo)
@@ -93,25 +87,23 @@ def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, ma
         if i > 0:
             if abs(xr_nuevo) < 1e-10: error = abs(xr_nuevo - xr_anterior)
             else: error = abs((xr_nuevo - xr_anterior) / xr_nuevo)
-            error_str = f"{error:^24.5e}"
-        else:
-            error_str = f"{'N/A':^24}"
-
-        paso_str = (
-            f"| {i+1:^8d} | {a:^22.8f} | {b:^22.8f} | {fa:^24.5e} | {fb:^24.5e} | "
-            f"{xr_nuevo:^22.8f} | {fxr:^24.5e} | {error_str} |"
-        )
-        pasos.append(paso_str)
+        
+        # Añadimos los NÚMEROS a la lista de datos
+        fila_datos = [
+            i + 1, a, b, fa, fb, xr_nuevo, fxr,
+            error if i > 0 else "N/A"
+        ]
+        tabla_data.append(fila_datos)
 
         if i > 0 and error < tolerancia:
-            pasos.append(separador)
-            pasos.append(f"\nConvergencia alcanzada en la iteración {i+1}.")
-            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': error, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': error, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Convergencia alcanzada en la iteración {i+1}."}
             
         if abs(fxr) < 1e-14:
-            pasos.append(separador)
-            pasos.append(f"\nRaíz exacta encontrada en la iteración {i+1}.")
-            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': 0.0, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': 0.0, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Raíz exacta encontrada en la iteración {i+1}."}
             
         if fa * fxr < 0:
             b, fb = xr_nuevo, fxr
@@ -121,38 +113,33 @@ def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, ma
         xr_anterior = xr_nuevo
         xr_nuevo = (a + b) / 2
         
-    pasos.append(separador)
-    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 'raiz': xr_nuevo, 'iteraciones': max_iter, 'error': error, 'pasos': pasos}
+    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 
+            'raiz': xr_nuevo, 'iteraciones': max_iter, 'error': error,
+            'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
 
 def metodo_falsa_posicion(funcion_str: str, a: float, b: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
-    pasos: List[str] = []
+    info_previa = []
+    tabla_data = []
     try:
         f = _crear_funcion_segura(funcion_str.replace('math.', ''))
         fa, fb = f(a), f(b)
-        pasos.append(f"Intervalo inicial: [{a}, {b}]")
-        pasos.append(f"f(a) = {fa:.6e}")
-        pasos.append(f"f(b) = {fb:.6e}")
+        info_previa.append(f"Intervalo inicial: [{a}, {b}]")
+        info_previa.append(f"f(a) = {fa:.6e}")
+        info_previa.append(f"f(b) = {fb:.6e}")
         
         if fa * fb >= 0:
-            return {'estado': 'error', 'mensaje': 'El método requiere que f(a) y f(b) tengan signos opuestos.', 'pasos': pasos}
+            return {'estado': 'error', 'mensaje': 'El método requiere que f(a) y f(b) tengan signos opuestos.', 'info_previa': info_previa}
     except Exception as e:
-         return {'estado': 'error', 'mensaje': str(e), 'pasos': pasos}
+         return {'estado': 'error', 'mensaje': str(e), 'info_previa': info_previa}
 
     if abs(fa - fb) < 1e-15:
-         return {'estado': 'error', 'mensaje': 'División por cero: f(a) es casi igual a f(b).', 'pasos': pasos}
+         return {'estado': 'error', 'mensaje': 'División por cero: f(a) es casi igual a f(b).', 'info_previa': info_previa}
 
     xr_anterior = a 
     xr_nuevo = b - (fb * (a - b)) / (fa - fb)
     error = 1.0
     
-    pasos.append("\n--- Iniciando iteraciones (Falsa Posición) ---")
-    
-    header = f"| {'Iter':^8} | {'a':^22} | {'b':^22} | {'f(a)':^24} | {'f(b)':^24} | {'xr':^22} | {'f(xr)':^24} | {'Error':^24} |"
-    separador = "-" * len(header)
-    
-    pasos.append(separador)
-    pasos.append(header)
-    pasos.append(separador)
+    tabla_headers = ["Iter", "a", "b", "f(a)", "f(b)", "xr", "f(xr)", "Error"]
     
     for i in range(max_iter):
         fxr = f(xr_nuevo)
@@ -160,25 +147,22 @@ def metodo_falsa_posicion(funcion_str: str, a: float, b: float, tolerancia: floa
         if i > 0:
             if abs(xr_nuevo) < 1e-10: error = abs(xr_nuevo - xr_anterior)
             else: error = abs((xr_nuevo - xr_anterior) / xr_nuevo)
-            error_str = f"{error:^24.5e}"
-        else:
-            error_str = f"{'N/A':^24}"
-
-        paso_str = (
-            f"| {i+1:^8d} | {a:^22.8f} | {b:^22.8f} | {fa:^24.5e} | {fb:^24.5e} | "
-            f"{xr_nuevo:^22.8f} | {fxr:^24.5e} | {error_str} |"
-        )
-        pasos.append(paso_str)
+        
+        fila_datos = [
+            i + 1, a, b, fa, fb, xr_nuevo, fxr,
+            error if i > 0 else "N/A"
+        ]
+        tabla_data.append(fila_datos)
 
         if i > 0 and error < tolerancia:
-            pasos.append(separador)
-            pasos.append(f"\nConvergencia alcanzada en la iteración {i+1}.")
-            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': error, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': error, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Convergencia alcanzada en la iteración {i+1}."}
             
         if abs(fxr) < 1e-14:
-            pasos.append(separador)
-            pasos.append(f"\nRaíz exacta encontrada en la iteración {i+1}.")
-            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': 0.0, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': xr_nuevo, 'iteraciones': i+1, 'error': 0.0, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Raíz exacta encontrada en la iteración {i+1}."}
             
         if fa * fxr < 0:
             b, fb = xr_nuevo, fxr
@@ -188,103 +172,85 @@ def metodo_falsa_posicion(funcion_str: str, a: float, b: float, tolerancia: floa
         xr_anterior = xr_nuevo
         
         if abs(fa - fb) < 1e-15:
-             pasos.append("\nAdvertencia: Diferencia entre f(a) y f(b) muy pequeña, terminando.")
+             info_previa.append("Advertencia: Diferencia entre f(a) y f(b) muy pequeña, terminando.")
              break
              
         xr_nuevo = b - (fb * (a - b)) / (fa - fb)
         
-    pasos.append(separador)
-    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 'raiz': xr_nuevo, 'iteraciones': max_iter, 'error': error, 'pasos': pasos}
+    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 
+            'raiz': xr_nuevo, 'iteraciones': max_iter, 'error': error,
+            'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
 
 # --- METODOS ABIERTOS (Newton y Secante) ---
 
 def metodo_newton_raphson(funcion_str: str, x0: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
-    pasos: List[str] = []
+    info_previa = []
+    tabla_data = []
     try:
         helpers = _crear_funcion_y_derivada_segura(funcion_str)
         f = helpers['f']
         df = helpers['df']
-        pasos.append(f"Función f(x) = {helpers['f_str']}")
-        pasos.append(f"Derivada f'(x) = {helpers['df_str']}")
-        pasos.append(f"Punto inicial x0 = {x0}")
+        info_previa.append(f"Función f(x) = {helpers['f_str']}")
+        info_previa.append(f"Derivada f'(x) = {helpers['df_str']}")
+        info_previa.append(f"Punto inicial x0 = {x0}")
         
     except Exception as e:
-         return {'estado': 'error', 'mensaje': str(e), 'pasos': pasos}
+         return {'estado': 'error', 'mensaje': str(e), 'info_previa': info_previa}
 
     xi = x0
     error = 1.0
-    x_nuevo = x0 
     
-    pasos.append("\n--- Iniciando iteraciones (Newton-Raphson) ---")
-    
-    header_f_prime = "f'(xi)"
-    header = f"| {'Iter':^8} | {'xi':^22} | {'f(xi)':^24} | {header_f_prime:^24} | {'xi+1':^22} | {'Error':^24} |"
-    separador = "-" * len(header)
-    
-    pasos.append(separador)
-    pasos.append(header)
-    pasos.append(separador)
+    tabla_headers = ["Iter", "xi", "f(xi)", "f'(xi)", "xi+1", "Error"]
     
     for i in range(max_iter):
         f_xi = f(xi)
         df_xi = df(xi)
         
         if abs(df_xi) < 1e-10:
-            pasos.append(separador)
-            pasos.append(f"\nError: Derivada cero encontrada en f'({xi:.6f}) = {df_xi:.6e}.")
-            return {'estado': 'error', 'mensaje': f"División por cero: La derivada es cero en x = {xi}", 'pasos': pasos}
+            return {'estado': 'error', 'mensaje': f"División por cero: La derivada es cero en x = {xi}", 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
             
         x_nuevo = xi - (f_xi / df_xi)
         
-        if abs(x_nuevo) < 1e-10:
-            error = abs(x_nuevo - xi)
-        else:
-            error = abs((x_nuevo - xi) / x_nuevo)
+        if abs(x_nuevo) < 1e-10: error = abs(x_nuevo - xi)
+        else: error = abs((x_nuevo - xi) / x_nuevo)
             
-        error_str = f"{error:^24.5e}" if i > 0 else f"{'N/A':^24}"
-
-        paso_str = (
-            f"| {i+1:^8d} | {xi:^22.8f} | {f_xi:^24.5e} | {df_xi:^24.5e} | "
-            f"{x_nuevo:^22.8f} | {error_str} |"
-        )
-        pasos.append(paso_str)
+        fila_datos = [
+            i + 1, xi, f_xi, df_xi, x_nuevo,
+            error if i > 0 else "N/A"
+        ]
+        tabla_data.append(fila_datos)
 
         if i > 0 and error < tolerancia:
-            pasos.append(separador)
-            pasos.append(f"\nConvergencia alcanzada en la iteración {i+1}.")
-            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': error, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': error, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Convergencia alcanzada en la iteración {i+1}."}
             
         if abs(f_xi) < 1e-14: 
-            pasos.append(separador)
-            pasos.append(f"\nRaíz exacta encontrada en la iteración {i+1} (xi={xi}).")
-            return {'estado': 'exito', 'raiz': xi, 'iteraciones': i+1, 'error': 0.0, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': xi, 'iteraciones': i+1, 'error': 0.0, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Raíz exacta encontrada en la iteración {i+1}."}
         
         xi = x_nuevo 
         
-    pasos.append(separador)
-    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 'raiz': xi, 'iteraciones': max_iter, 'error': error, 'pasos': pasos}
+    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 
+            'raiz': xi, 'iteraciones': max_iter, 'error': error,
+            'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
 
 
 def metodo_secante(funcion_str: str, x0: float, x1: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
-    pasos: List[str] = []
+    info_previa = []
+    tabla_data = []
     try:
         f = _crear_funcion_segura(funcion_str.replace('math.', ''))
-        pasos.append(f"Punto inicial x0 = {x0}")
-        pasos.append(f"Punto inicial x1 = {x1}")
+        info_previa.append(f"Punto inicial x0 = {x0}")
+        info_previa.append(f"Punto inicial x1 = {x1}")
     except Exception as e:
-         return {'estado': 'error', 'mensaje': str(e), 'pasos': pasos}
+         return {'estado': 'error', 'mensaje': str(e), 'info_previa': info_previa}
 
     error = 1.0
-    x_nuevo = x1 
     
-    pasos.append("\n--- Iniciando iteraciones (Secante) ---")
-    
-    header = f"| {'Iter':^8} | {'x_i-1':^20} | {'x_i':^20} | {'f(x_i-1)':^24} | {'f(x_i)':^24} | {'x_i+1':^20} | {'Error':^24} |"
-    separador = "-" * len(header)
-    
-    pasos.append(separador)
-    pasos.append(header)
-    pasos.append(separador)
+    tabla_headers = ["Iter", "x_i-1", "x_i", "f(x_i-1)", "f(x_i)", "x_i+1", "Error"]
     
     for i in range(max_iter):
         f_x0 = f(x0)
@@ -292,41 +258,33 @@ def metodo_secante(funcion_str: str, x0: float, x1: float, tolerancia: float, ma
         
         denominador = f_x0 - f_x1
         if abs(denominador) < 1e-10:
-            pasos.append(separador)
-            pasos.append(f"\nError: Denominador cero (f(x_i-1) - f(x_i) \approx 0).")
-            return {'estado': 'error', 'mensaje': "División por cero: f(x0) y f(x1) son demasiado similares.", 'pasos': pasos}
+            return {'estado': 'error', 'mensaje': "División por cero: f(x0) y f(x1) son demasiado similares.", 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
             
         x_nuevo = x1 - (f_x1 * (x0 - x1)) / denominador
         
-        if abs(x_nuevo) < 1e-10:
-            error = abs(x_nuevo - x1)
-        else:
-            error = abs((x_nuevo - x1) / x_nuevo)
+        if abs(x_nuevo) < 1e-10: error = abs(x_nuevo - x1)
+        else: error = abs((x_nuevo - x1) / x_nuevo)
             
-        error_str = f"{error:^24.5e}" if i > 0 else f"{'N/A':^24}"
+        fila_datos = [
+            i + 1, x0, x1, f_x0, f_x1, x_nuevo,
+            error if i > 0 else "N/A"
+        ]
+        tabla_data.append(fila_datos)
 
-        paso_str = (
-            f"| {i+1:^8d} | {x0:^20.8f} | {x1:^20.8f} | {f_x0:^24.5e} | {f_x1:^24.5e} | "
-            f"{x_nuevo:^20.8f} | {error_str} |"
-        )
-        pasos.append(paso_str)
-
-        # --- CORRECCIÓN LÍNEA 324 (aprox) ---
         if i > 0 and error < tolerancia:
-            pasos.append(separador)
-            pasos.append(f"\nConvergencia alcanzada en la iteración {i+1}.")
-            # Antes decía 'xr_nuevo', ahora 'x_nuevo'
-            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': error, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': error, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Convergencia alcanzada en la iteración {i+1}."}
             
-        # --- CORRECCIÓN LÍNEA 329 (aprox) ---
         if abs(f(x_nuevo)) < 1e-14:
-            pasos.append(separador)
-            pasos.append(f"\nRaíz exacta encontrada en la iteración {i+1}.")
-            # Antes decía 'xr_nuevo', ahora 'x_nuevo'
-            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': 0.0, 'pasos': pasos}
+            return {'estado': 'exito', 'raiz': x_nuevo, 'iteraciones': i+1, 'error': 0.0, 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data,
+                    'mensaje_final': f"Raíz exacta encontrada en la iteración {i+1}."}
         
         x0 = x1
         x1 = x_nuevo
         
-    pasos.append(separador)
-    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 'raiz': x1, 'iteraciones': max_iter, 'error': error, 'pasos': pasos}
+    return {'estado': 'max_iter', 'mensaje': f'Se alcanzó el máximo de {max_iter} iteraciones.', 
+            'raiz': x1, 'iteraciones': max_iter, 'error': error,
+            'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
