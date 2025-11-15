@@ -4,13 +4,14 @@ from app_config import (COLOR_FONDO_SECUNDARIO, COLOR_FUNDAMENTOS,
                         COLOR_HOVER, COLOR_BOTON_SECUNDARIO, 
                         COLOR_BOTON_SECUNDARIO_HOVER)
 
-# Intentamos importar la lógica
+# Importación de LogicaFundamentos
 try:
     from LogicaFundamentos import operar_polinomios, resolver_polinomio
     LOGICA_DISPONIBLE = True
-except ImportError:
+    print("✅ LogicaFundamentos.py cargado exitosamente")
+except ImportError as e:
     LOGICA_DISPONIBLE = False
-    print("ADVERTENCIA: No se pudo cargar LogicaFundamentos.py")
+    print(f"❌ Error cargando LogicaFundamentos.py: {e}")
 
 class PaginaFundamentos(PaginaBase):
     
@@ -134,8 +135,13 @@ class PaginaFundamentos(PaginaBase):
         
     def _renderizar_pasos(self, pasos_lista: list):
         self._limpiar_pasos_scroll()
+        if not pasos_lista:
+            self._crear_bloque_paso("SIN PASOS", "La lógica no devolvió pasos detallados.")
+            return
+            
         for paso in pasos_lista:
-            self._crear_bloque_paso(titulo=paso['titulo'], math=paso['math'])
+            self._crear_bloque_paso(titulo=paso.get('titulo', 'PASO'), 
+                                    math=paso.get('math', '...'))
 
     def limpiar(self):
         self.ent_p1.delete(0, 'end')
@@ -179,7 +185,7 @@ class PaginaFundamentos(PaginaBase):
                 self._renderizar_pasos(res['pasos'])
             
             if res['estado'] == 'exito':
-                self.resultado_caja.insert('0.0', res['resultado_math'])
+                self.resultado_caja.insert('0.0', res.get('resultado_math', res.get('resultado_str', 'Éxito')))
             else:
                 self.resultado_caja.insert('0.0', f"Error:\n{res['mensaje']}")
                 

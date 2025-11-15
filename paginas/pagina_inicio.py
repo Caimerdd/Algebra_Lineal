@@ -1,5 +1,3 @@
-# paginas/pagina_inicio.py
-
 import customtkinter as ctk
 from paginas.pagina_base import PaginaBase
 # --- IMPORTACIONES MODIFICADAS ---
@@ -8,12 +6,15 @@ from app_config import (COLOR_TARJETA, COLOR_TEXTO_TARJETA,
                         COLOR_FUNDAMENTOS, COLOR_DIFERENCIAL, COLOR_INTEGRAL)
 # ---------------------------------
 
-class PaginaInicio(ctk.CTkFrame):
-    def __init__(self, parent, app):
-        super().__init__(parent)
-        self.app = app
-
+class PaginaInicio(PaginaBase):
+    def crear_widgets(self):
+        self.configurar_grid()
+        self.crear_interfaz()
+    
+    def configurar_grid(self):
         self.grid_rowconfigure(0, weight=1)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=1)
         self.grid_columnconfigure(0, weight=1)
     
     def crear_interfaz(self):

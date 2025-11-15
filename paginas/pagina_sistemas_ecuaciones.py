@@ -1,34 +1,44 @@
 import customtkinter as ctk
 import re
-import sympy as sp # Para formatear matrices
+import sympy as sp
 from paginas.pagina_base import PaginaBase
 from app_config import (COLOR_FONDO_SECUNDARIO, COLOR_ALGEBRA, COLOR_HOVER, 
                         COLOR_BOTON_SECUNDARIO, COLOR_BOTON_SECUNDARIO_HOVER)
 from app_config import fmt, parse_valor
 
-# Intentamos importar la lógica de tu archivo
+# Importación de Complement
 try:
     from Complement import (
         gauss_steps, gauss_jordan_steps, inverse_steps, 
         resolver_por_cramer
     )
     LOGICA_DISPONIBLE = True
-except ImportError:
+    print("✅ Complement.py cargado exitosamente en sistemas_ecuaciones")
+except ImportError as e:
     LOGICA_DISPONIBLE = False
-    print("ADVERTENCIA: No se pudo cargar Complement.py")
+    print(f"❌ Error cargando Complement.py: {e}")
+    # Funciones de respaldo
+    def gauss_steps(M): 
+        return {'steps': [], 'ops': [], 'status': 'error', 'mensaje': 'Complement no disponible'}
+    def gauss_jordan_steps(M): 
+        return {'steps': [], 'ops': [], 'status': 'error', 'mensaje': 'Complement no disponible'}
+    def inverse_steps(A): 
+        return {'steps': [], 'ops': [], 'status': 'singular', 'mensaje': 'Complement no disponible'}
+    def resolver_por_cramer(M): 
+        return {'estado': 'error', 'mensaje': 'Complement no disponible', 'pasos': []}
 
 class PaginaSistemasEcuaciones(PaginaBase):
     def crear_widgets(self):
         self.configurar_grid()
         self.crear_interfaz()
-        self.generar_cuadriculas_matriz()
+        self.after(100, self.generar_cuadriculas_matriz)
     
     def configurar_grid(self):
         self.grid_rowconfigure(0, weight=0)
         self.grid_rowconfigure(1, weight=0)
         self.grid_rowconfigure(2, weight=0)
         self.grid_rowconfigure(3, weight=0)
-        self.grid_rowconfigure(4, weight=1) # Fila de resultados se expande
+        self.grid_rowconfigure(4, weight=1)
         self.grid_columnconfigure(0, weight=1)
     
     def crear_interfaz(self):
@@ -107,7 +117,7 @@ class PaginaSistemasEcuaciones(PaginaBase):
         ctk.CTkLabel(marco_dims_b, text="Filas:", font=ctk.CTkFont(size=13)).grid(row=0, column=0, padx=(0, 4))
         self.var_filas_b = ctk.StringVar(value="3")
         self.ent_filas_b = ctk.CTkEntry(marco_dims_b, width=60, textvariable=self.var_filas_b)
-        self.ent_filas_b.grid(row=0, column=1)
+        self.ent_filas_b.grid(row=0, column=1, padx=(0, 12))
         ctk.CTkLabel(marco_dims_b, text="Columnas:", font=ctk.CTkFont(size=13)).grid(row=0, column=2, padx=(0, 4))
         self.var_columnas_b = ctk.StringVar(value="1")
         self.ent_columnas_b = ctk.CTkEntry(marco_dims_b, width=60, textvariable=self.var_columnas_b)
@@ -115,6 +125,7 @@ class PaginaSistemasEcuaciones(PaginaBase):
         self.marco_grilla_b = ctk.CTkFrame(self.marco_b)
         self.marco_grilla_b.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 8))
 
+        # INICIALIZAR LISTAS VACÍAS AQUÍ (igual que en operaciones_matriciales)
         self.entradas_a = []
         self.entradas_b = []
         self.grilla_a = []
@@ -136,7 +147,7 @@ class PaginaSistemasEcuaciones(PaginaBase):
         marco_resultados.grid_columnconfigure(0, weight=2)
         marco_resultados.grid_columnconfigure(1, weight=1)
 
-        # --- Bitácora (ScrollableFrame) ---
+        # Bitácora (ScrollableFrame)
         marco_pasos = ctk.CTkFrame(marco_resultados)
         marco_pasos.grid(row=0, column=0, sticky="nsew", padx=(0, 6), pady=8)
         marco_pasos.grid_columnconfigure(0, weight=1)
@@ -146,7 +157,7 @@ class PaginaSistemasEcuaciones(PaginaBase):
         self.pasos_scroll_frame.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
         self.pasos_scroll_frame.grid_columnconfigure(0, weight=1)
 
-        # --- Resultado (Resaltado) ---
+        # Resultado (Resaltado)
         marco_resultado = ctk.CTkFrame(marco_resultados)
         marco_resultado.grid(row=0, column=1, sticky="nsew", padx=(6, 0), pady=8)
         marco_resultado.grid_columnconfigure(0, weight=1)
@@ -183,10 +194,8 @@ class PaginaSistemasEcuaciones(PaginaBase):
     def _matriz_a_pretty(self, M):
         """Formatea una matriz (lista de listas) usando SymPy SIN Unicode."""
         try:
-            # CORRECCIÓN: use_unicode=False para evitar '?'
-            return sp.pretty(sp.Matrix(M), use_unicode=False) 
+            return sp.pretty(sp.Matrix(M), use_unicode=False)
         except Exception:
-            # Fallback por si SymPy falla
             return '\n'.join(['[' + ' '.join([fmt(val) for val in fila]) + ']' for fila in M])
 
     def _renderizar_pasos_gauss(self, pasos_lista: list, ops_lista: list):
@@ -215,7 +224,6 @@ class PaginaSistemasEcuaciones(PaginaBase):
             linea = linea.strip()
             if not linea: continue
             
-            # Detectar si la línea es un título (no empieza con espacio)
             if not linea.startswith(" ") and ":" in linea:
                 if math_actual:
                     self._crear_bloque_texto(titulo_actual, "\n".join(math_actual))
@@ -255,18 +263,25 @@ class PaginaSistemasEcuaciones(PaginaBase):
             if filas_a <= 0 or cols_a <= 0 or filas_b <= 0:
                 raise ValueError("Las dimensiones deben ser numeros enteros positivos")
 
-            for widget in self.grilla_a: widget.destroy()
-            for widget in self.grilla_b: widget.destroy()
+            # Limpiar grillas existentes
+            for widget in self.grilla_a: 
+                widget.destroy()
+            for widget in self.grilla_b: 
+                widget.destroy()
+                
             self.grilla_a, self.grilla_b = [], []
             self.entradas_a = [[None]*cols_a for _ in range(filas_a)]
             self.entradas_b = [[None]*1 for _ in range(filas_b)]
 
+            # Crear nuevas entradas para matriz A
             for i in range(filas_a):
                 for j in range(cols_a):
                     e = ctk.CTkEntry(self.marco_grilla_a, width=60)
                     e.grid(row=i, column=j, padx=2, pady=2)
                     self.grilla_a.append(e)
                     self.entradas_a[i][j] = e
+                    
+            # Crear nuevas entradas para matriz B
             for i in range(filas_b):
                 e2 = ctk.CTkEntry(self.marco_grilla_b, width=60)
                 e2.grid(row=i, column=0, padx=2, pady=2)
@@ -274,11 +289,14 @@ class PaginaSistemasEcuaciones(PaginaBase):
                 self.entradas_b[i][0] = e2
 
             self.limpiar_matrices()
+            
         except ValueError as e:
             self.resultado_caja.configure(state="normal")
             self.resultado_caja.delete('0.0','end')
             self.resultado_caja.insert('0.0', f'Error: {e}')
             self.resultado_caja.configure(state="disabled")
+        except Exception as e:
+            print(f"Error inesperado en generar_cuadriculas_matriz: {e}")
 
     def parsear_y_poblar_ecuaciones(self):
         try:
@@ -447,7 +465,6 @@ class PaginaSistemasEcuaciones(PaginaBase):
         
         self.resultado_caja.configure(state="disabled")
 
-
     def limpiar_matrices(self):
         for fila_entradas in self.entradas_a:
             for entrada in fila_entradas:
@@ -467,3 +484,4 @@ class PaginaSistemasEcuaciones(PaginaBase):
 
     def mostrar(self):
         self.grid(row=0, column=0, sticky="nsew")
+        self.after(100, self.generar_cuadriculas_matriz)
