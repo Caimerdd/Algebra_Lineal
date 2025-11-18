@@ -1,82 +1,105 @@
-# Calculadora de Matrices en C#
+Calculadora de Álgebra Lineal en Python
 
-Este proyecto es una conversión completa del código Python original a C# con Windows Forms, manteniendo exactamente la misma funcionalidad y diseño.
+Este proyecto es una calculadora de álgebra lineal desarrollada en Python, utilizando la librería customtkinter para la interfaz gráfica. Permite realizar diversas operaciones con matrices y resolver sistemas de ecuaciones lineales, mostrando los pasos de los cálculos.
 
-## Características
+Creadores
+Farid Zuñiga
+Luis Guadamuz 
+Joshua Vilchez
+Critopher Rodriguez
 
-- **Interfaz idéntica**: Diseño 100% igual al original de Python con CustomTkinter
-- **Funcionalidades completas**:
-  - Suma de matrices
-  - Resta de matrices  
-  - Multiplicación de matrices
-  - Resolución de sistemas de ecuaciones lineales con Gauss
-  - Resolución de sistemas de ecuaciones lineales con Gauss-Jordan
-- **Namespace**: Calculadora
-- **Variables y funciones**: Todas en español con camelCase
-- **Framework**: .NET Framework 4.8
-- **UI**: Windows Forms
+#Características Principales
 
-## Estructura del Proyecto
+Interfaz Gráfica Intuitiva: Diseño claro con customtkinter para facilitar la entrada de datos y visualización de resultados.
 
-```
-Calculadora/
-├── FormularioPrincipal.cs          # Formulario principal (equivalente a MainApp)
-├── FormularioPrincipal.Designer.cs # Diseñador del formulario
-├── AlgebraLineal.cs                # Lógica matemática (equivalente a algebraLineal.py)
-├── Program.cs                      # Punto de entrada
-└── Properties/                     # Archivos de configuración
-```
+Operaciones Matriciales: Suma, resta y multiplicación de matrices.
 
-## Funcionalidades Implementadas
+Resolución de Sistemas:
 
-### 1. Operaciones con Matrices
-- **Suma**: A + B (matrices del mismo tamaño)
-- **Resta**: A - B (matrices del mismo tamaño)
-- **Multiplicación**: A × B (columnas de A = filas de B)
+Método de Eliminación Gaussiana.
 
-### 2. Resolución de Sistemas Lineales
-- **Método de Gauss**: Eliminación hacia adelante + sustitución hacia atrás
-- **Método de Gauss-Jordan**: Eliminación completa para forma escalonada reducida
+Método de Gauss-Jordan (para forma escalonada reducida).
 
-### 3. Interfaz de Usuario
-- Panel de navegación izquierdo con menú de secciones
-- Área principal con controles para configurar matrices
-- Entrada de datos por grilla o texto
-- Visualización de pasos del algoritmo
-- Mostrar resultados y soluciones
+Regla de Cramer (con pasos detallados mostrando los determinantes).
 
-## Cómo Usar
+Propiedades de Matrices:
 
-1. **Abrir el proyecto** en Visual Studio
-2. **Compilar** el proyecto (Build → Build Solution)
-3. **Ejecutar** la aplicación
-4. **Seleccionar "Álgebra Lineal"** del menú izquierdo
-5. **Configurar** el número de filas y columnas
-6. **Elegir** la operación deseada
-7. **Generar** las matrices e introducir los valores
-8. **Calcular** para ver los resultados
+Cálculo de la Matriz Inversa (usando Gauss-Jordan sobre [A|I]).
 
-## Equivalencias Python → C#
+Cálculo del Determinante (elige automáticamente entre expansión por cofactores para matrices pequeñas y eliminación gaussiana para matrices grandes, mostrando los pasos del método elegido).
 
-| Python | C# |
-|--------|-----|
-| `MainApp` | `FormularioPrincipal` |
-| `algebraLineal.py` | `AlgebraLineal.cs` |
-| `gauss_jordan_steps()` | `PasosGaussJordan()` |
-| `gauss_steps()` | `PasosGauss()` |
-| `fmt_number()` | `FormatearNumero()` |
-| `parsear_ecuacion()` | `ParsearEcuacion()` |
+Verificación de Independencia Lineal de vectores (columnas de una matriz).
 
-## Requisitos del Sistema
+Visualización de Pasos: Muestra los pasos intermedios para los métodos de resolución, inversa y determinantes, ayudando a entender el proceso.
 
-- Windows 7 o superior
-- .NET Framework 4.8
-- Visual Studio 2019 o superior (para desarrollo)
+Entrada Flexible: Permite definir dimensiones diferentes para las matrices A y B.
 
-## Notas Técnicas
+Manejo de Errores: Valida las dimensiones de las matrices según la operación seleccionada y detecta entradas no válidas.
 
-- Todas las variables y métodos están en español con camelCase
-- La lógica matemática es idéntica al código Python original
-- El diseño visual replica fielmente la interfaz de CustomTkinter
-- Manejo de errores y validaciones implementadas
-- Formateo de números y matrices consistente con el original
+Estructura del Proyecto
+
+interfazGrafica.py: Contiene toda la lógica de la interfaz de usuario (ventanas, botones, campos de entrada) y coordina las llamadas a las funciones matemáticas.
+
+Complement.py: Alberga todas las funciones matemáticas puras (algoritmos de Gauss, Cramer, determinante, inversa, etc.).
+
+Funcionalidades Implementadas
+
+1. Operaciones Básicas
+
+Suma: α*A + β*B (matrices deben tener la misma dimensión).
+
+Resta: α*A - β*B (matrices deben tener la misma dimensión).
+
+Multiplicación: A * B (columnas de A deben ser igual a filas de B).
+
+2. Resolución de Sistemas Lineales (Ax=b)
+
+Gauss: Transforma la matriz aumentada [A|b] a forma escalonada y usa sustitución hacia atrás (si hay solución única).
+
+Gauss-Jordan: Transforma la matriz aumentada [A|b] a forma escalonada reducida. Identifica si el sistema tiene solución única, infinitas soluciones (indicando variables libres) o es inconsistente.
+
+Regla de Cramer: Calcula la solución usando determinantes (xi = Di / D). Requiere que la matriz A sea cuadrada y det(A) != 0. Se ingresa la matriz aumentada [A|b]. Muestra los pasos del cálculo de cada determinante.
+
+3. Propiedades y Operaciones Avanzadas
+
+Independencia Lineal: Determina si los vectores columna de la matriz A son linealmente independientes o dependientes, mostrando el rango.
+
+Inversa: Calcula la matriz inversa de A (A⁻¹) usando el método de Gauss-Jordan sobre [A|I]. Requiere que A sea cuadrada e invertible. Muestra los pasos de la reducción.
+
+Determinante: Calcula el determinante de A.
+
+Si A es 3x3 o menor, usa expansión por cofactores mostrando los pasos recursivos.
+
+Si A es 4x4 o mayor, usa eliminación gaussiana mostrando los pasos de la triangulación y el producto de la diagonal.
+
+Requiere que A sea cuadrada.
+
+Cómo Usar
+
+Asegúrate de tener Python instalado y la librería customtkinter (pip install customtkinter).
+
+Ejecuta el archivo interfazGrafica.py.
+
+Selecciona "Álgebra Lineal" en el menú (ya está por defecto).
+
+Elige la Operación deseada en el menú desplegable.
+
+Introduce las Filas y Columnas para la Matriz A (y Matriz B si aplica).
+
+Presiona "Generar Matrices".
+
+Rellena las casillas de las matrices con los números deseados.
+
+Si es Suma o Resta, introduce los escalares α y β (si no, déjalos vacíos, se tomarán como 1).
+
+Presiona "Calcular".
+
+Observa los Pasos en la caja izquierda y el Resultado final en la caja derecha.
+
+Usa "Limpiar" para borrar las matrices y resultados.
+
+Requisitos
+
+Python 3.x
+
+Librería
