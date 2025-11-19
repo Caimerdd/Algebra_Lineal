@@ -3,10 +3,10 @@ Calculadora de Álgebra Lineal en Python
 Este proyecto es una calculadora de álgebra lineal desarrollada en Python, utilizando la librería customtkinter para la interfaz gráfica. Permite realizar diversas operaciones con matrices y resolver sistemas de ecuaciones lineales, mostrando los pasos de los cálculos.
 
 Creadores
-Farid Zuñiga
-Luis Guadamuz 
-Joshua Vilchez
-Critopher Rodriguez
+//Luis Guadamuz
+//Farid Zúñiga 
+//Joshua Vilchez
+//Critopher Rodriguez
 
 #Características Principales
 
