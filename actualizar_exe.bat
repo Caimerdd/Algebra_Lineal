@@ -50,7 +50,7 @@ echo Generando... (Esto puede tardar 1 minuto)
 :: Usamos el python del venv para llamar a PyInstaller como modulo (-m)
 :: Esto evita problemas de PATH
 
-"%PYTHON_CMD%" -m PyInstaller --noconsole --onefile --icon="icono.ico.ico" --name="MathPro_Final" --collect-all customtkinter main.py
+"%PYTHON_CMD%" -m PyInstaller --noconsole --onefile --icon="icono.ico" --name="MathPro" --collect-all customtkinter main.py
 
 if %errorlevel% neq 0 (
     color 47
@@ -68,13 +68,13 @@ echo ==========================================
 echo   PASO 3: ACCESO DIRECTO
 echo ==========================================
 
-set "RUTA_EXE=%CD%\dist\MathPro_Final.exe"
-set "RUTA_ICONO=%CD%\icono.ico.ico"
+set "RUTA_EXE=%CD%\dist\MathPro.exe"
+set "RUTA_ICONO=%CD%\icono.ico"
 set "RUTA_LNK=%USERPROFILE%\Desktop\MathPro.lnk"
 
 echo Creando acceso directo en el Escritorio...
 
-powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('%RUTA_LNK%');$s.TargetPath='%RUTA_EXE%';$s.WorkingDirectory='%CD%\dist';$s.IconLocation='%RUTA_ICONO%';$s.Save()"
+powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('%C:\Users\luisg\OneDrive\Desktop%');$s.TargetPath='%RUTA_EXE%';$s.WorkingDirectory='%CD%\dist';$s.IconLocation='%RUTA_ICONO%';$s.Save()"
 
 echo.
 echo ==========================================
