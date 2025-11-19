@@ -1,105 +1,111 @@
-Calculadora de Álgebra Lineal en Python
+# 🧮 MathPro - Herramientas Matemáticas Avanzadas
 
-Este proyecto es una calculadora de álgebra lineal desarrollada en Python, utilizando la librería customtkinter para la interfaz gráfica. Permite realizar diversas operaciones con matrices y resolver sistemas de ecuaciones lineales, mostrando los pasos de los cálculos.
+![Python](https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white)
+![GUI](https://img.shields.io/badge/Interfaz-CustomTkinter-005fd4?style=for-the-badge)
+![Math](https://img.shields.io/badge/Motor-SymPy-3b6c12?style=for-the-badge)
+![Build](https://img.shields.io/badge/Build-PyInstaller-orange?style=for-the-badge)
 
-Creadores
-//Luis Guadamuz
-//Farid Zúñiga 
-//Joshua Vilchez
-//Critopher Rodriguez
+**MathPro** es una suite de software de escritorio diseñada para estudiantes y profesionales de ingeniería. Ofrece soluciones paso a paso para problemas complejos de Álgebra Lineal, Cálculo y Métodos Numéricos, todo envuelto en una interfaz moderna, oscura y amigable.
 
-#Características Principales
+---
 
-Interfaz Gráfica Intuitiva: Diseño claro con customtkinter para facilitar la entrada de datos y visualización de resultados.
+## ✨ Características Principales
 
-Operaciones Matriciales: Suma, resta y multiplicación de matrices.
+### 📐 Álgebra Lineal
+* **Sistemas de Ecuaciones:** Resolución por Gauss, Gauss-Jordan, Regla de Cramer y Matriz Inversa.
+* **Operaciones Matriciales:** Suma, Resta, Multiplicación y Escalar.
+* **Propiedades:** Cálculo de Determinantes (Expansión/Gauss), Rango e Independencia Lineal.
+* **Bitácora Paso a Paso:** Visualización detallada de las operaciones fila por fila y cálculos intermedios.
 
-Resolución de Sistemas:
+### 🔢 Métodos Numéricos
+* **Ecuaciones No Lineales:**
+    * Métodos Cerrados: Bisección, Falsa Posición.
+    * Métodos Abiertos: Newton-Raphson, Secante.
+* **Gráficas Integradas:** Visualización automática de funciones e intervalos de convergencia.
+* **Tablas de Iteración:** Tablas formateadas con precisión científica y cálculo de error.
 
-Método de Eliminación Gaussiana.
+### 🧮 Fundamentos y Cálculo (En Desarrollo)
+* **Fundamentos:** Operaciones con polinomios (Suma, Resta, Multiplicación) y búsqueda de raíces.
+* **Cálculo Diferencial:** Estructura lista para Límites y Derivadas.
+* **Cálculo Integral:** Estructura lista para Integrales definidas, indefinidas y series.
 
-Método de Gauss-Jordan (para forma escalonada reducida).
+### 🎨 Experiencia de Usuario (UX)
+* **Intro Cinemática:** Splash screen animado con OpenCV al iniciar la aplicación.
+* **Modo Oscuro/Claro:** Interfaz adaptativa construida con CustomTkinter.
+* **Bitácora Estilo "Photomath":** Explicaciones claras, formateadas matemáticamente y fáciles de leer.
 
-Regla de Cramer (con pasos detallados mostrando los determinantes).
+---
 
-Propiedades de Matrices:
+## 🛠️ Tecnologías Utilizadas
 
-Cálculo de la Matriz Inversa (usando Gauss-Jordan sobre [A|I]).
+Este proyecto ha sido construido con las siguientes librerías de Python:
 
-Cálculo del Determinante (elige automáticamente entre expansión por cofactores para matrices pequeñas y eliminación gaussiana para matrices grandes, mostrando los pasos del método elegido).
+* **[CustomTkinter](https://github.com/TomSchimansky/CustomTkinter):** Para una interfaz gráfica moderna.
+* **[SymPy](https://www.sympy.org/):** Para el cálculo simbólico y álgebra exacta.
+* **[Matplotlib](https://matplotlib.org/):** Para graficar funciones matemáticas.
+* **[OpenCV (cv2)](https://opencv.org/):** Para la reproducción de video en la intro.
+* **[Pillow (PIL)](https://python-pillow.org/):** Para manejo de imágenes e íconos.
+* **[PyInstaller](https://pyinstaller.org/):** Para compilar el proyecto en un ejecutable `.exe`.
 
-Verificación de Independencia Lineal de vectores (columnas de una matriz).
+---
 
-Visualización de Pasos: Muestra los pasos intermedios para los métodos de resolución, inversa y determinantes, ayudando a entender el proceso.
+## 🚀 Instalación y Uso
 
-Entrada Flexible: Permite definir dimensiones diferentes para las matrices A y B.
+### Prerrequisitos
+Asegúrate de tener Python instalado. Luego, instala las dependencias necesarias ejecutando:
 
-Manejo de Errores: Valida las dimensiones de las matrices según la operación seleccionada y detecta entradas no válidas.
+```bash
+pip install customtkinter sympy matplotlib opencv-python pillow pyinstaller
+Ejecución (Modo Desarrollador)
+Para correr el programa desde el código fuente:
 
-Estructura del Proyecto
+Bash
 
-interfazGrafica.py: Contiene toda la lógica de la interfaz de usuario (ventanas, botones, campos de entrada) y coordina las llamadas a las funciones matemáticas.
+python main.py
+📦 Crear Ejecutable (.exe)
+El proyecto incluye un script automatizado para compilar el programa, empaquetar los recursos (video e ícono) y crear accesos directos.
 
-Complement.py: Alberga todas las funciones matemáticas puras (algoritmos de Gauss, Cramer, determinante, inversa, etc.).
+Asegúrate de tener los archivos icono.ico y intro.mp4 en la carpeta raíz del proyecto.
 
-Funcionalidades Implementadas
+Ejecuta el archivo batch incluido:
 
-1. Operaciones Básicas
+👉 actualizar_exe.bat
 
-Suma: α*A + β*B (matrices deben tener la misma dimensión).
+Este script realizará automáticamente:
 
-Resta: α*A - β*B (matrices deben tener la misma dimensión).
+Limpieza de carpetas de compilación anteriores (build, dist).
 
-Multiplicación: A * B (columnas de A deben ser igual a filas de B).
+Empaquetado de librerías y recursos multimedia.
 
-2. Resolución de Sistemas Lineales (Ax=b)
+Generación del archivo MathPro_Final.exe.
 
-Gauss: Transforma la matriz aumentada [A|b] a forma escalonada y usa sustitución hacia atrás (si hay solución única).
+Creación de un acceso directo en tu Escritorio.
 
-Gauss-Jordan: Transforma la matriz aumentada [A|b] a forma escalonada reducida. Identifica si el sistema tiene solución única, infinitas soluciones (indicando variables libres) o es inconsistente.
+📂 Estructura del Proyecto
+Plaintext
 
-Regla de Cramer: Calcula la solución usando determinantes (xi = Di / D). Requiere que la matriz A sea cuadrada y det(A) != 0. Se ingresa la matriz aumentada [A|b]. Muestra los pasos del cálculo de cada determinante.
+ALGEBRA_LUIS/
+│
+├── paginas/                  # Módulos de la interfaz gráfica
+│   ├── pagina_base.py        # Clase padre para todas las páginas
+│   ├── pagina_inicio.py      # Menú principal con tarjetas
+│   ├── pagina_sistemas...py  # Interfaz para sistemas de ecuaciones
+│   ├── pagina_metodos...py   # Interfaz para métodos numéricos
+│   └── ... (otras páginas)
+│
+├── ui_components/            # Componentes reutilizables
+│   └── ventana_ayuda.py      # Ventana emergente de ayuda SymPy
+│
+├── Complement.py             # Lógica matemática (Gauss, Cramer, Inversa)
+├── LogicaFundamentos.py      # Lógica para polinomios (SymPy)
+├── MetodosNumericos.py       # Algoritmos numéricos (Newton, Bisección, etc.)
+├── app_config.py             # Colores, configuraciones y utilidades globales
+├── main.py                   # Punto de entrada de la aplicación
+│
+├── intro.mp4                 # Video de splash screen
+├── icono.ico                 # Ícono de la aplicación
+└── actualizar_exe.bat        # Script de compilación automática
+🤝 Contribución
+Este es un proyecto académico/profesional en constante evolución.
 
-3. Propiedades y Operaciones Avanzadas
-
-Independencia Lineal: Determina si los vectores columna de la matriz A son linealmente independientes o dependientes, mostrando el rango.
-
-Inversa: Calcula la matriz inversa de A (A⁻¹) usando el método de Gauss-Jordan sobre [A|I]. Requiere que A sea cuadrada e invertible. Muestra los pasos de la reducción.
-
-Determinante: Calcula el determinante de A.
-
-Si A es 3x3 o menor, usa expansión por cofactores mostrando los pasos recursivos.
-
-Si A es 4x4 o mayor, usa eliminación gaussiana mostrando los pasos de la triangulación y el producto de la diagonal.
-
-Requiere que A sea cuadrada.
-
-Cómo Usar
-
-Asegúrate de tener Python instalado y la librería customtkinter (pip install customtkinter).
-
-Ejecuta el archivo interfazGrafica.py.
-
-Selecciona "Álgebra Lineal" en el menú (ya está por defecto).
-
-Elige la Operación deseada en el menú desplegable.
-
-Introduce las Filas y Columnas para la Matriz A (y Matriz B si aplica).
-
-Presiona "Generar Matrices".
-
-Rellena las casillas de las matrices con los números deseados.
-
-Si es Suma o Resta, introduce los escalares α y β (si no, déjalos vacíos, se tomarán como 1).
-
-Presiona "Calcular".
-
-Observa los Pasos en la caja izquierda y el Resultado final en la caja derecha.
-
-Usa "Limpiar" para borrar las matrices y resultados.
-
-Requisitos
-
-Python 3.x
-
-Librería
+<div align="center"> <p>Desarrollado con ❤️ y mucho ☕</p> <p><b>MathPro © 2025</b></p> </div>
