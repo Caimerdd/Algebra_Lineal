@@ -7,6 +7,13 @@
 
 **MathPro** es una suite de software de escritorio diseñada para estudiantes y profesionales de ingeniería. Ofrece soluciones paso a paso para problemas complejos de Álgebra Lineal, Cálculo y Métodos Numéricos, todo envuelto en una interfaz moderna, oscura y amigable.
 
+**Creada por** 
+* **Luis Guadamuz**
+* **Farid Zuñiga**
+* **Joshua Vilchez**
+* **Cristopher Rodríguez **
+
+
 ---
 
 ## ✨ Características Principales
