@@ -283,7 +283,7 @@ class AplicacionPrincipal(ctk.CTk):
     def toggle_theme(self):
         if self.theme_switch.get() == 1:
             ctk.set_appearance_mode("dark")
-        else:
+        else:   
             ctk.set_appearance_mode("light")
 
     def mostrar_ayuda_sympy(self):
