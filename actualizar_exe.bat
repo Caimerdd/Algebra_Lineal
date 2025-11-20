@@ -74,7 +74,8 @@ set "RUTA_LNK=%USERPROFILE%\Desktop\MathPro.lnk"
 
 echo Creando acceso directo en el Escritorio...
 
-powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('%C:\Users\luisg\OneDrive\Desktop%');$s.TargetPath='%RUTA_EXE%';$s.WorkingDirectory='%CD%\dist';$s.IconLocation='%RUTA_ICONO%';$s.Save()"
+powershell -command "$s = (New-Object -ComObject WScript.Shell).CreateShortcut('C:\Users\luisg\OneDrive\Desktop\MathPro.lnk'); $s.TargetPath = 'C:\Users\luisg\OneDrive\Desktop\Algebra_Lineal\Algebra_Luis\dist\MathPro.exe'; $s.WorkingDirectory = 'C:\Users\luisg\OneDrive\Desktop\Algebra_Lineal\Algebra_Luis\dist'; $s.IconLocation = 'C:\Users\luisg\OneDrive\Desktop\Algebra_Lineal\Algebra_Luis\icono.ico'; $s.Save()"
+
 
 echo.
 echo ==========================================
