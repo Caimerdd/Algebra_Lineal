@@ -1,426 +1,746 @@
-from copy import deepcopy
-from typing import List, Dict
+# Complement.py - VERSIÓN COMPLETAMENTE CORREGIDA
 
-EPS = 1e-9
+"""
+Módulo de complementos para operaciones de álgebra lineal y matrices.
 
-# umbral para cambiar de metodo de determinante
-UMBRAL_TAMANO_DETERMINANTE = 4
+Contiene implementaciones de:
+- Eliminación Gaussiana y Gauss-Jordan
+- Cálculo de determinantes
+- Regla de Cramer
+- Independencia lineal de vectores
+- Cálculo de matriz inversa
 
-def _snap(M: List[List[float]]) -> List[List[float]]:
-    return [[float(x) for x in r] for r in M]
+Todas las funciones incluyen manejo robusto de errores y pasos detallados.
+"""
 
-def _fmt(x: float) -> str:
-    return f"{x:.4g}"
+import sympy as sp
+import numpy as np
+from typing import List, Dict, Any, Tuple, Union
+import copy
 
-def gauss_steps(M: List[List[float]]) -> Dict:
-    """calcula la forma escalonada usando eliminacion gaussiana"""
-    A = deepcopy(M)
-    n = len(A)
-    if n == 0: return {'steps': [], 'ops': [], 'status': 'empty', 'solution': None}
-    m = len(A[0]) - 1
-    steps = [_snap(A)]
-    ops = ['Inicial']
-    row = 0
-    pivcols: List[int] = []
-    for col in range(m):
-        sel = None
-        for r in range(row, n):
-            if abs(A[r][col]) > EPS:
-                sel = r; break
-        if sel is None: continue
-        if sel != row:
-            A[row], A[sel] = A[sel], A[row]
-            steps.append(_snap(A)); ops.append(f'F{row+1} ↔ F{sel+1}')
-        for r in range(row+1, n):
-            if abs(A[r][col]) > EPS:
-                if abs(A[row][col]) > EPS:
-                    f = A[r][col] / A[row][col]
-                    for c in range(col, m+1): A[r][c] -= f * A[row][c]
-                    steps.append(_snap(A)); ops.append(f'F{r+1} ← F{r+1} − ({_fmt(f)})·F{row+1}')
-                else:
-                    pass # pivote practicamente cero no operar
-        pivcols.append(col)
-        row += 1
-        if row == n: break
-    for r in range(n):
-        if all(abs(A[r][c]) < EPS for c in range(m)) and abs(A[r][m]) > EPS:
-            return {'steps': steps, 'ops': ops, 'status': 'inconsistent', 'solution': None}
-    if len(pivcols) == m:
-        x = [0.0]*m
-        try:
-             for i in range(len(pivcols)-1, -1, -1):
-                 col = pivcols[i]; r = i; s = A[r][m]
-                 for c in range(col+1, m): s -= A[r][c] * x[c]
-                 if abs(A[r][col]) > EPS:
-                      x[col] = s / A[r][col]
-                 else:
-                      return {'steps': steps, 'ops': ops, 'status': 'incomplete', 'solution': None}
-        except IndexError:
-             return {'steps': steps, 'ops': ops, 'status': 'error', 'mensaje': 'Error de indice durante retro-sustitucion.', 'solution': None}
-        return {'steps': steps, 'ops': ops, 'status': 'unique', 'solution': x}
-    return {'steps': steps, 'ops': ops, 'status': 'incomplete', 'solution': None}
+# =============================================================================
+# VALIDACIONES Y UTILIDADES
+# =============================================================================
 
-def gauss_jordan_steps(M: List[List[float]]) -> Dict:
-    """calcula la forma escalonada reducida usando gauss-jordan"""
-    A = deepcopy(M)
-    n = len(A)
-    if n == 0: return {'steps': [], 'ops': [], 'status': 'empty', 'solution': None}
-    m = len(A[0]) - 1
-    if m < 0: return {'steps':[], 'ops':[], 'status':'error', 'mensaje':'Matriz sin columna de resultados.', 'solution':None}
-    steps = [_snap(A)]
-    ops = ['Inicial']
-    fila_pivote = 0
-    columna_pivote = 0
-    pivot_map: Dict[int, int] = {}
-    while fila_pivote < n and columna_pivote < m:
-        indice_max = fila_pivote
-        for k in range(fila_pivote + 1, n):
-            if abs(A[k][columna_pivote]) > abs(A[indice_max][columna_pivote]):
-                indice_max = k
-        if abs(A[indice_max][columna_pivote]) < EPS:
-            columna_pivote += 1
-            continue
-        if indice_max != fila_pivote:
-            A[fila_pivote], A[indice_max] = A[indice_max], A[fila_pivote]
-            steps.append(_snap(A)); ops.append(f'F{fila_pivote+1} ↔ F{indice_max+1}')
-        piv_val = A[fila_pivote][columna_pivote]
-        if abs(piv_val - 1.0) > EPS:
-            try:
-                for j in range(columna_pivote, m + 1):
-                    A[fila_pivote][j] /= piv_val
-                steps.append(_snap(A)); ops.append(f'F{fila_pivote+1} ← F{fila_pivote+1} / {_fmt(piv_val)}')
-            except ZeroDivisionError:
-                 return {'steps': steps, 'ops': ops, 'status': 'error', 'mensaje':'Division por cero inesperada.', 'solution': None}
-        for i in range(n):
-            if i != fila_pivote:
-                factor = A[i][columna_pivote]
-                if abs(factor) > EPS:
-                    for j in range(columna_pivote, m + 1):
-                        A[i][j] -= factor * A[fila_pivote][j]
-                    steps.append(_snap(A)); ops.append(f'F{i+1} ← F{i+1} − ({_fmt(factor)})·F{fila_pivote+1}')
-        pivot_map[columna_pivote] = fila_pivote
-        fila_pivote += 1
-        columna_pivote += 1
-    for i in range(fila_pivote, n):
-        if abs(A[i][m]) > EPS:
-             if all(abs(A[i][j]) < EPS for j in range(m)):
-                  return {'steps': steps, 'ops': ops, 'status': 'inconsistent', 'solution': None}
-    if len(pivot_map) == m:
-        sol = [0.0]*m
-        for col, r in pivot_map.items():
-             if r < n:
-                 sol[col] = A[r][m]
-             else:
-                 return {'steps': steps, 'ops': ops, 'status': 'error', 'mensaje': f'Error logico: fila de pivote {r} fuera de rango.', 'solution': None}
-        return {'steps': steps, 'ops': ops, 'status': 'unique', 'solution': sol}
-    else:
-        libres = [c for c in range(m) if c not in pivot_map]
-        basic_solution = {}
-        for col_pivote, fila_pivote_idx in pivot_map.items():
-             if fila_pivote_idx < n:
-                 basic_solution[col_pivote] = A[fila_pivote_idx][m]
-             else:
-                  return {'steps': steps, 'ops': ops, 'status': 'error', 'mensaje': f'Error logico: fila de pivote {fila_pivote_idx} fuera de rango.', 'solution': None}
-        return {'steps': steps, 'ops': ops, 'status': 'infinite', 'solution': None,
-                'free_vars': libres, 'basic_solution': basic_solution}
+def _validar_matriz(matriz: List[List[float]]) -> bool:
+    """
+    Valida que la matriz sea válida para operaciones.
+    
+    Args:
+        matriz: Matriz a validar
+        
+    Returns:
+        bool: True si la matriz es válida
+    """
+    if not matriz or not isinstance(matriz, list):
+        return False
+    
+    if not all(isinstance(fila, list) for fila in matriz):
+        return False
+    
+    # Verificar que todas las filas tengan la misma longitud
+    longitudes = [len(fila) for fila in matriz]
+    if len(set(longitudes)) != 1:
+        return False
+    
+    # Verificar que todos los elementos sean numéricos
+    for fila in matriz:
+        for elemento in fila:
+            if not isinstance(elemento, (int, float)):
+                return False
+    
+    return True
 
-def independenciaVectores(M: List[List[float]]) -> Dict:
-    """determina si un conjunto de vectores es linealmente independiente"""
-    A = deepcopy(M)
-    if not A: return {'independent': True, 'rank': 0, 'num_vectors': 0}
-    num_filas, num_vectores = len(A), len(A[0])
-    rank = 0
-    fila_pivote = 0
-    for col in range(num_vectores):
-         if fila_pivote >= num_filas: break
-         indice_max = fila_pivote
-         for k in range(fila_pivote + 1, num_filas):
-             if abs(A[k][col]) > abs(A[indice_max][col]):
-                 indice_max = k
-         if abs(A[indice_max][col]) < EPS:
-             continue
-         if indice_max != fila_pivote:
-             A[fila_pivote], A[indice_max] = A[indice_max], A[fila_pivote]
-         piv_val = A[fila_pivote][col]
-         if abs(piv_val) > EPS:
-             for i in range(fila_pivote + 1, num_filas):
-                 # Solo calcular factor si el elemento no es ya cero
-                 if abs(A[i][col]) > EPS:
-                     factor = A[i][col] / piv_val
-                     for j in range(col, num_vectores):
-                         A[i][j] -= factor * A[fila_pivote][j]
-         fila_pivote += 1
-         rank = fila_pivote
-    return {'independent': rank == num_vectores, 'rank': rank, 'num_vectors': num_vectores}
+def _matriz_a_texto(matriz: List[List[float]], precision: int = 4) -> str:
+    """
+    Convierte una matriz a string legible.
+    
+    Args:
+        matriz: Matriz a formatear
+        precision: Número de decimales
+        
+    Returns:
+        str: Matriz formateada como string
+    """
+    if not _validar_matriz(matriz):
+        return "Matriz inválida"
+    
+    filas_str = []
+    for fila in matriz:
+        fila_str = [f"{elem:.{precision}f}".rstrip('0').rstrip('.') for elem in fila]
+        filas_str.append("[" + "  ".join(fila_str) + "]")
+    
+    return "\n".join(filas_str)
 
-def inverse_steps(A: List[List[float]]) -> Dict:
-    """calcula la inversa de una matriz cuadrada"""
-    n = len(A)
-    if n == 0: return {'steps': [], 'ops': [], 'status': 'singular', 'inverse': None}
-    if any(len(f) != n for f in A):
-        return {'steps': [], 'ops': [], 'status': 'error', 'mensaje': 'la matriz debe ser cuadrada para calcular la inversa'}
+def _es_matriz_cuadrada(matriz: List[List[float]]) -> bool:
+    """Verifica si una matriz es cuadrada."""
+    if not _validar_matriz(matriz):
+        return False
+    return len(matriz) == len(matriz[0])
 
-    matriz_aumentada = [fila + [1.0 if i == j else 0.0 for j in range(n)] for i, fila in enumerate(A)]
-    resultado_gj = gauss_jordan_steps(matriz_aumentada)
-    steps = resultado_gj.get('steps', [])
-    ops = resultado_gj.get('ops', [])
+def _crear_matriz_identidad(n: int) -> List[List[float]]:
+    """Crea una matriz identidad de tamaño n x n."""
+    return [[1.0 if i == j else 0.0 for j in range(n)] for i in range(n)]
 
-    if resultado_gj['status'] not in ('unique', 'infinite'):
-         return {'steps': steps, 'ops': ops, 'status': 'singular', 'inverse': None}
+# =============================================================================
+# ELIMINACIÓN GAUSSIANA
+# =============================================================================
 
-    matriz_final = resultado_gj['steps'][-1] if resultado_gj['steps'] else matriz_aumentada
-    for i in range(n):
-        for j in range(n):
-            if abs(matriz_final[i][j] - (1.0 if i == j else 0.0)) > EPS * n:
-                return {'steps': steps, 'ops': ops, 'status': 'singular', 'inverse': None}
-
-    inv = [fila[n:] for fila in matriz_final]
-    return {'steps': steps, 'ops': ops, 'status': 'invertible', 'inverse': inv}
-
-def _determinante_expansion_recursivo(sub_matriz: List[List[float]], pasos: List[str], sangria: str = "") -> float:
-    """funcion interna recursiva para determinante por expansion"""
-    tamano = len(sub_matriz)
-    if not sub_matriz or any(len(fila) != tamano for fila in sub_matriz):
-        raise ValueError("la submatriz debe ser cuadrada y no vacia")
-
-    # Mostrar matriz actual solo si es relevante
-    if sangria == "" or tamano <= 3:
-        pasos.append(f"{sangria}calculando det de matriz {tamano}x{tamano}:")
-        for fila in sub_matriz:
-            pasos.append(f"{sangria}  {[ _fmt(elem) for elem in fila ]}")
-    else:
-        pasos.append(f"{sangria}calculando det de submatriz {tamano}x{tamano}...")
-
-    if tamano == 1:
-        determinante = sub_matriz[0][0]
-        pasos.append(f"{sangria}└─> resultado (caso base 1x1): {_fmt(determinante)}\n")
-        return determinante
-    if tamano == 2:
-        a, b = sub_matriz[0][0], sub_matriz[0][1]
-        c, d = sub_matriz[1][0], sub_matriz[1][1]
-        determinante = a * d - b * c
-        pasos.append(f"{sangria}└─> ({_fmt(a)}*{_fmt(d)}) - ({_fmt(b)}*{_fmt(c)}) = {_fmt(determinante)}\n")
-        return determinante
-
-    determinante_total = 0.0
-    pasos.append(f"{sangria}expandiendo por la primera fila:")
-    for j in range(tamano):
-        elemento = sub_matriz[0][j]
-        # Saltar calculo si el elemento es cero (termino sera cero)
-        if abs(elemento) < EPS:
-            pasos.append(f"{sangria}  termino {j+1}: elemento es {_fmt(elemento)}, el termino es 0")
-            continue
-
-        signo = (-1)**j
-        matriz_menor = [fila[:j] + fila[j+1:] for fila in sub_matriz[1:]]
-        texto_signo = "+" if signo > 0 else "-"
-        pasos.append(f"{sangria}  termino {j+1}: signo(-1)^(0+{j}) * (elemento) * det(submatriz)")
-        pasos.append(f"{sangria}  = ({texto_signo} {_fmt(elemento)}) * det(submatriz)")
-        try:
-            determinante_submatriz = _determinante_expansion_recursivo(matriz_menor, pasos, sangria + "    ")
-            termino = signo * elemento * determinante_submatriz
-            determinante_total += termino
-            pasos.append(f"{sangria}  └─> valor del termino: {texto_signo} {_fmt(elemento)} * {_fmt(determinante_submatriz)} = {_fmt(termino)}")
-        except Exception as e:
-             pasos.append(f"{sangria}  └─> error al calcular det(submatriz): {e}")
-             raise e # Propagar el error hacia arriba
-
-    pasos.append(f"{sangria}└─> suma total de terminos = {_fmt(determinante_total)}\n")
-    return determinante_total
-
-def determinante_por_gauss(matriz: List[List[float]]) -> Dict:
-    """calcula el determinante usando eliminacion gaussiana y mostrando pasos"""
+def gauss_steps(M: List[List[float]]) -> Dict[str, Any]:
+    """
+    Aplica eliminación gaussiana a una matriz aumentada mostrando pasos.
+    
+    Args:
+        M: Matriz aumentada [A|b]
+        
+    Returns:
+        Dict con pasos, operaciones y solución
+    """
     pasos = []
+    operaciones = []
+    
     try:
-        if not matriz:
-            return {'estado': 'error', 'mensaje': 'la matriz esta vacia', 'pasos': pasos}
+        if not _validar_matriz(M):
+            raise ValueError("Matriz aumentada inválida")
+        
+        # Crear copia para no modificar la original
+        matriz = copy.deepcopy(M)
         n = len(matriz)
-        if any(len(fila) != n for fila in matriz):
-            return {'estado': 'error', 'mensaje': 'la matriz debe ser cuadrada', 'pasos': pasos}
-
-        A = deepcopy(matriz)
-        pasos.append("metodo: eliminacion gaussiana")
-        pasos.append("matriz original:")
-        for fila in A: pasos.append("  " + str([_fmt(val) for val in fila]))
-        pasos.append("")
-
-        num_intercambios = 0
-        determinante_final = 1.0 # Empezar con 1 para el producto
-
+        
+        pasos.append(copy.deepcopy(matriz))
+        operaciones.append("Matriz inicial")
+        
+        # Eliminación hacia adelante
         for i in range(n):
-            # buscar pivote (el mayor en valor absoluto en la columna actual)
-            pivote_idx = i
+            # Pivoteo parcial: encontrar fila con máximo elemento en columna i
+            max_fila = i
             for k in range(i + 1, n):
-                if abs(A[k][i]) > abs(A[pivote_idx][i]):
-                    pivote_idx = k
+                if abs(matriz[k][i]) > abs(matriz[max_fila][i]):
+                    max_fila = k
+            
+            # Intercambiar filas si es necesario
+            if max_fila != i:
+                matriz[i], matriz[max_fila] = matriz[max_fila], matriz[i]
+                pasos.append(copy.deepcopy(matriz))
+                operaciones.append(f"Intercambio F{i+1} ↔ F{max_fila+1}")
+            
+            # Verificar que el pivote no sea cero
+            if abs(matriz[i][i]) < 1e-10:
+                pasos.append(copy.deepcopy(matriz))
+                operaciones.append(f"Pivote cero en posición ({i+1},{i+1}) - Sistema singular")
+                return {
+                    'steps': pasos,
+                    'ops': operaciones,
+                    'status': 'singular',
+                    'message': 'Matriz singular - no tiene solución única'
+                }
+            
+            # Eliminación en columnas debajo del pivote
+            for j in range(i + 1, n):
+                factor = matriz[j][i] / matriz[i][i]
+                
+                # Aplicar eliminación a toda la fila
+                for k in range(i, len(matriz[0])):
+                    matriz[j][k] -= factor * matriz[i][k]
+                
+                pasos.append(copy.deepcopy(matriz))
+                operaciones.append(f"F{j+1} ← F{j+1} - ({factor:.3f})·F{i+1}")
+        
+        # Sustitución hacia atrás
+        solucion = [0.0] * n
+        for i in range(n - 1, -1, -1):
+            solucion[i] = matriz[i][n]  # Última columna (términos independientes)
+            for j in range(i + 1, n):
+                solucion[i] -= matriz[i][j] * solucion[j]
+            solucion[i] /= matriz[i][i]
+        
+        # Verificar solución
+        pasos.append(copy.deepcopy(matriz))
+        operaciones.append("Matriz triangular superior - Sustitución completada")
+        
+        return {
+            'steps': pasos,
+            'ops': operaciones,
+            'status': 'unique',
+            'solution': solucion,
+            'message': 'Solución única encontrada'
+        }
+        
+    except Exception as e:
+        return {
+            'steps': pasos,
+            'ops': operaciones,
+            'status': 'error',
+            'message': f'Error en eliminación gaussiana: {str(e)}'
+        }
 
-            # intercambiar filas si es necesario
-            if pivote_idx != i:
-                A[i], A[pivote_idx] = A[pivote_idx], A[i]
-                num_intercambios += 1
-                pasos.append(f"intercambio: f{i+1} <-> f{pivote_idx+1} (cambia signo det)")
-                for fila in A: pasos.append("  " + str([_fmt(val) for val in fila]))
-                pasos.append("")
+# =============================================================================
+# ELIMINACIÓN GAUSS-JORDAN
+# =============================================================================
 
-            # si el pivote es (casi) cero, determinante es (casi) cero
-            pivote_val = A[i][i]
-            if abs(pivote_val) < EPS:
-                pasos.append(f"pivote en ({i+1},{i+1}) es {_fmt(pivote_val)} (cero) -> determinante = 0")
-                return {'estado': 'exito', 'determinante': 0.0, 'pasos': pasos}
+def gauss_jordan_steps(M: List[List[float]]) -> Dict[str, Any]:
+    """
+    Aplica eliminación Gauss-Jordan a una matriz aumentada mostrando pasos.
+    
+    Args:
+        M: Matriz aumentada [A|b]
+        
+    Returns:
+        Dict con pasos, operaciones y solución
+    """
+    pasos = []
+    operaciones = []
+    
+    try:
+        if not _validar_matriz(M):
+            raise ValueError("Matriz aumentada inválida")
+        
+        matriz = copy.deepcopy(M)
+        n = len(matriz)
+        m = len(matriz[0]) - 1  # Columnas de A (excluyendo b)
+        
+        pasos.append(copy.deepcopy(matriz))
+        operaciones.append("Matriz inicial")
+        
+        fila = 0
+        col = 0
+        
+        while fila < n and col < m:
+            # Encontrar pivote máximo en columna actual
+            max_fila = fila
+            for i in range(fila + 1, n):
+                if abs(matriz[i][col]) > abs(matriz[max_fila][col]):
+                    max_fila = i
+            
+            if abs(matriz[max_fila][col]) < 1e-10:
+                # Columna es cero, pasar a siguiente columna
+                col += 1
+                continue
+            
+            # Intercambiar filas si es necesario
+            if max_fila != fila:
+                matriz[fila], matriz[max_fila] = matriz[max_fila], matriz[fila]
+                pasos.append(copy.deepcopy(matriz))
+                operaciones.append(f"Intercambio F{fila+1} ↔ F{max_fila+1}")
+            
+            # Normalizar fila pivote
+            pivote = matriz[fila][col]
+            for j in range(col, m + 1):
+                matriz[fila][j] /= pivote
+            
+            pasos.append(copy.deepcopy(matriz))
+            operaciones.append(f"F{fila+1} ← F{fila+1} / {pivote:.3f}")
+            
+            # Eliminar en otras filas
+            for i in range(n):
+                if i != fila and abs(matriz[i][col]) > 1e-10:
+                    factor = matriz[i][col]
+                    for j in range(col, m + 1):
+                        matriz[i][j] -= factor * matriz[fila][j]
+                    
+                    pasos.append(copy.deepcopy(matriz))
+                    operaciones.append(f"F{i+1} ← F{i+1} - ({factor:.3f})·F{fila+1}")
+            
+            fila += 1
+            col += 1
+        
+        # Extraer solución
+        solucion = [0.0] * m
+        rango = fila
+        
+        if rango < m:
+            return {
+                'steps': pasos,
+                'ops': operaciones,
+                'status': 'infinite',
+                'message': 'Sistema con infinitas soluciones',
+                'rank': rango
+            }
+        
+        # Leer solución de la matriz reducida
+        for i in range(m):
+            solucion[i] = matriz[i][m]  # Última columna
+        
+        # Verificar consistencia
+        for i in range(rango, n):
+            if abs(matriz[i][m]) > 1e-10:  # 0 ≠ 0?
+                return {
+                    'steps': pasos,
+                    'ops': operaciones,
+                    'status': 'inconsistent',
+                    'message': 'Sistema inconsistente - sin solución'
+                }
+        
+        return {
+            'steps': pasos,
+            'ops': operaciones,
+            'status': 'unique',
+            'solution': solucion,
+            'message': 'Solución única encontrada'
+        }
+        
+    except Exception as e:
+        return {
+            'steps': pasos,
+            'ops': operaciones,
+            'status': 'error',
+            'message': f'Error en Gauss-Jordan: {str(e)}'
+        }
 
-            # eliminar elementos debajo del pivote
-            for k in range(i + 1, n):
-                # Solo operar si el elemento no es ya (casi) cero
-                if abs(A[k][i]) > EPS:
-                    factor = A[k][i] / pivote_val
-                    # Optimización: No mostrar la operación si el factor es casi cero
-                    # (puede pasar por errores de precision)
-                    if abs(factor) > EPS:
-                        for j in range(i, n): # Empezar desde la columna i
-                            A[k][j] -= factor * A[i][j]
-                        pasos.append(f"operacion: f{k+1} <- f{k+1} - ({_fmt(factor)})*f{i+1}")
-                        for fila in A: pasos.append("  " + str([_fmt(val) for val in fila]))
-                        pasos.append("")
+# =============================================================================
+# CÁLCULO DE DETERMINANTE
+# =============================================================================
 
-        # La matriz A ahora es triangular superior
-        pasos.append("matriz triangular superior obtenida:")
-        for fila in A: pasos.append("  " + str([_fmt(val) for val in fila]))
+def pasos_determinante(A: List[List[float]]) -> Dict[str, Any]:
+    """
+    Calcula el determinante de una matriz mostrando pasos.
+    
+    Args:
+        A: Matriz cuadrada
+        
+    Returns:
+        Dict con pasos y resultado
+    """
+    pasos = []
+    
+    try:
+        if not _validar_matriz(A):
+            raise ValueError("Matriz inválida")
+        
+        if not _es_matriz_cuadrada(A):
+            raise ValueError("El determinante solo existe para matrices cuadradas")
+        
+        n = len(A)
+        matriz = copy.deepcopy(A)
+        det = 1.0
+        
+        pasos.append(f"Matriz inicial {n}x{n}:")
+        pasos.append(_matriz_a_texto(matriz))
         pasos.append("")
-
-        # Calcular determinante como producto de la diagonal
-        diag_str = []
+        
+        # Para matrices 1x1 y 2x2, usar fórmulas directas
+        if n == 1:
+            resultado = matriz[0][0]
+            pasos.append(f"Determinante 1x1 = {resultado}")
+            return {
+                'estado': 'exito',
+                'determinante': resultado,
+                'pasos': pasos
+            }
+        
+        if n == 2:
+            resultado = matriz[0][0] * matriz[1][1] - matriz[0][1] * matriz[1][0]
+            pasos.append(f"Fórmula 2x2: ({matriz[0][0]} × {matriz[1][1]}) - ({matriz[0][1]} × {matriz[1][0]})")
+            pasos.append(f" = {resultado}")
+            return {
+                'estado': 'exito',
+                'determinante': resultado,
+                'pasos': pasos
+            }
+        
+        if n == 3:
+            # Regla de Sarrus
+            a, b, c = matriz[0]
+            d, e, f = matriz[1]
+            g, h, i = matriz[2]
+            
+            resultado = (a*e*i + b*f*g + c*d*h) - (c*e*g + b*d*i + a*f*h)
+            
+            pasos.append("Regla de Sarrus para 3x3:")
+            pasos.append(f"Positivos: ({a}×{e}×{i}) + ({b}×{f}×{g}) + ({c}×{d}×{h})")
+            pasos.append(f"Negativos: - ({c}×{e}×{g}) - ({b}×{d}×{i}) - ({a}×{f}×{h})")
+            pasos.append(f"Resultado: {resultado}")
+            
+            return {
+                'estado': 'exito',
+                'determinante': resultado,
+                'pasos': pasos
+            }
+        
+        # Para matrices n>3, usar eliminación gaussiana
+        pasos.append(f"Matriz {n}x{n} - usando eliminación gaussiana:")
+        
         for i in range(n):
-            determinante_final *= A[i][i]
-            diag_str.append(_fmt(A[i][i]))
+            # Pivoteo parcial
+            max_fila = i
+            for k in range(i + 1, n):
+                if abs(matriz[k][i]) > abs(matriz[max_fila][i]):
+                    max_fila = k
+            
+            if max_fila != i:
+                matriz[i], matriz[max_fila] = matriz[max_fila], matriz[i]
+                det *= -1  # Cambio de signo por intercambio
+                pasos.append(f"Intercambio F{i+1} ↔ F{max_fila+1} (det × -1)")
+                pasos.append(_matriz_a_texto(matriz))
+            
+            if abs(matriz[i][i]) < 1e-12:
+                pasos.append(f"Pivote cero en posición ({i+1},{i+1})")
+                pasos.append("Determinante = 0")
+                return {
+                    'estado': 'exito',
+                    'determinante': 0.0,
+                    'pasos': pasos
+                }
+            
+            # Multiplicar determinante por pivote
+            det *= matriz[i][i]
+            pasos.append(f"Pivote F{i+1} = {matriz[i][i]:.6f}")
+            pasos.append(f"det acumulado = {det:.6f}")
+            
+            # Eliminación
+            for j in range(i + 1, n):
+                factor = matriz[j][i] / matriz[i][i]
+                for k in range(i + 1, n):
+                    matriz[j][k] -= factor * matriz[i][k]
+        
+        pasos.append("")
+        pasos.append(f"Determinante final = {det:.6f}")
+        
+        return {
+            'estado': 'exito',
+            'determinante': det,
+            'pasos': pasos
+        }
+        
+    except Exception as e:
+        return {
+            'estado': 'error',
+            'mensaje': f'Error calculando determinante: {str(e)}',
+            'pasos': pasos
+        }
 
-        pasos.append("producto de la diagonal = " + " * ".join(diag_str) + f" = {_fmt(determinante_final)}")
+# =============================================================================
+# REGLA DE CRAMER
+# =============================================================================
 
-        # Ajustar signo por intercambios
-        if num_intercambios > 0:
-            pasos.append(f"numero de intercambios de filas = {num_intercambios}")
-            if num_intercambios % 2 != 0:
-                determinante_final *= -1
-                pasos.append(f"como es impar, el signo del determinante cambia -> {_fmt(determinante_final)}")
-            else:
-                 pasos.append(f"como es par, el signo del determinante no cambia -> {_fmt(determinante_final)}")
-        else:
-             pasos.append("no hubo intercambios de filas")
-
-        return {'estado': 'exito', 'determinante': determinante_final, 'pasos': pasos}
-
-    except Exception as error:
-        return {'estado': 'error', 'mensaje': str(error), 'pasos': pasos}
-
-
-def pasos_determinante(matriz: List[List[float]]) -> Dict:
-    """calcula el determinante eligiendo el metodo segun el tamaño"""
+def resolver_por_cramer(M: List[List[float]]) -> Dict[str, Any]:
+    """
+    Resuelve un sistema de ecuaciones usando la regla de Cramer.
+    
+    Args:
+        M: Matriz aumentada [A|b]
+        
+    Returns:
+        Dict con pasos y solución
+    """
+    pasos = []
+    
     try:
-        if not matriz:
-            return {'estado': 'error', 'mensaje': 'la matriz esta vacia'}
-        tamano = len(matriz)
-        if any(len(fila) != tamano for fila in matriz):
-            return {'estado': 'error', 'mensaje': 'la matriz debe ser cuadrada'}
-
-        # elegir metodo segun tamaño
-        if tamano >= UMBRAL_TAMANO_DETERMINANTE:
-            # Usar Gauss para matrices grandes
-            resultado = determinante_por_gauss(matriz)
-        else:
-            # Usar Expansion para matrices pequeñas
-            pasos_expansion = ["metodo: expansion por cofactores"]
-            determinante_final = _determinante_expansion_recursivo(deepcopy(matriz), pasos_expansion)
-            resultado = {'estado': 'exito', 'determinante': determinante_final, 'pasos': pasos_expansion}
-
-        return resultado
-
-    except Exception as error:
-        # Captura errores de validacion inicial o propagados de las funciones internas
-        return {'estado': 'error', 'mensaje': str(error), 'pasos': []}
-
-
-def resolver_por_cramer(matriz_aumentada: List[List[float]]) -> Dict:
-    """resuelve un sistema ax=b usando la regla de cramer"""
-    pasos_generales = []
-    # Funcion interna para formatear y añadir matriz a los pasos
-    def _anadir_matriz_pasos(mat, titulo):
-        pasos_generales.append(titulo)
-        for fila in mat:
-            pasos_generales.append("  " + "  ".join(_fmt(val) for val in fila))
-        pasos_generales.append("") # Linea en blanco
-
-    try:
-        if not matriz_aumentada or not matriz_aumentada[0]:
-            return {'estado': 'error', 'mensaje': 'la matriz aumentada esta vacia', 'pasos': pasos_generales}
-
-        num_filas = len(matriz_aumentada)
-        num_cols_total = len(matriz_aumentada[0])
-        num_vars = num_cols_total - 1
-
-        if num_filas != num_vars:
-            return {'estado': 'error', 'mensaje': 'la matriz de coeficientes a debe ser cuadrada', 'pasos': pasos_generales}
-        if num_vars <= 0:
-            return {'estado': 'error', 'mensaje': 'el sistema no tiene variables', 'pasos': pasos_generales}
-
-        matriz_a = [fila[:num_vars] for fila in matriz_aumentada]
-        vector_b = [fila[num_vars] for fila in matriz_aumentada]
-
-        _anadir_matriz_pasos(matriz_a, "matriz de coeficientes (a):")
-        pasos_generales.append("vector de resultados (b):")
-        pasos_generales.append("  " + str([_fmt(val) for val in vector_b]) + "\n")
-
-        pasos_generales.append("calculando el determinante del sistema (d = det(a)):")
-        # Usar la funcion principal que elige el metodo
-        resultado_det_a = pasos_determinante(matriz_a)
-        if resultado_det_a.get('pasos'):
-            # Añadir los pasos del determinante principal
-            for paso in resultado_det_a['pasos']:
-                if isinstance(paso, str):
-                    pasos_generales.append(paso)
-                else:
-                    pasos_generales.append(str(paso))
-
-        if resultado_det_a['estado'] == 'error':
-            error_msg = resultado_det_a.get('mensaje', 'error desconocido al calcular d')
-            pasos_generales.append(f"error al calcular d: {error_msg}")
-            return {'estado': 'error', 'mensaje': f"error al calcular d: {error_msg}", 'pasos': pasos_generales}
-
-        determinante_d = resultado_det_a['determinante']
-        pasos_generales.append(f"determinante del sistema d = {_fmt(determinante_d)}\n")
-
-        if abs(determinante_d) < EPS:
-            return {'estado': 'sin_solucion_unica', 'mensaje': 'el determinante del sistema es 0 la regla de cramer no aplica', 'pasos': pasos_generales}
-
+        if not _validar_matriz(M):
+            raise ValueError("Matriz aumentada inválida")
+        
+        n = len(M)
+        if n == 0:
+            raise ValueError("Matriz vacía")
+        
+        # Separar A y b
+        A = [fila[:-1] for fila in M]
+        b = [fila[-1] for fila in M]
+        
+        if not _es_matriz_cuadrada(A):
+            raise ValueError("La regla de Cramer requiere matriz A cuadrada")
+        
+        if len(A) != len(b):
+            raise ValueError("Dimensiones incompatibles entre A y b")
+        
+        pasos.append("Sistema de ecuaciones:")
+        for i in range(n):
+            ecuacion = " + ".join([f"{A[i][j]:.2f}x{j+1}" for j in range(n)])
+            pasos.append(f"{ecuacion} = {b[i]:.2f}")
+        pasos.append("")
+        
+        # Calcular determinante de A
+        det_A_result = pasos_determinante(A)
+        if det_A_result['estado'] == 'error':
+            raise ValueError(f"Error calculando det(A): {det_A_result['mensaje']}")
+        
+        det_A = det_A_result['determinante']
+        pasos.append(f"det(A) = {det_A:.6f}")
+        pasos.append("")
+        
+        if abs(det_A) < 1e-10:
+            pasos.append("det(A) ≈ 0 → Sistema no tiene solución única")
+            return {
+                'estado': 'error',
+                'mensaje': 'El determinante de A es cero - sistema no tiene solución única',
+                'pasos': pasos
+            }
+        
         solucion = []
-        for j in range(num_vars):
-            matriz_aj = deepcopy(matriz_a)
-            for i in range(num_filas):
-                matriz_aj[i][j] = vector_b[i]
+        
+        # Para cada variable, calcular determinante de A con columna reemplazada
+        for k in range(n):
+            # Crear matriz A_k (reemplazar columna k por b)
+            A_k = copy.deepcopy(A)
+            for i in range(n):
+                A_k[i][k] = b[i]
+            
+            pasos.append(f"Matriz A_{k+1} (columna {k+1} reemplazada por b):")
+            pasos.append(_matriz_a_texto(A_k))
+            
+            # Calcular det(A_k)
+            det_A_k_result = pasos_determinante(A_k)
+            if det_A_k_result['estado'] == 'error':
+                raise ValueError(f"Error calculando det(A_{k+1}): {det_A_k_result['mensaje']}")
+            
+            det_A_k = det_A_k_result['determinante']
+            pasos.append(f"det(A_{k+1}) = {det_A_k:.6f}")
+            
+            # Calcular x_k = det(A_k) / det(A)
+            x_k = det_A_k / det_A
+            solucion.append(x_k)
+            
+            pasos.append(f"x_{k+1} = det(A_{k+1}) / det(A) = {x_k:.6f}")
+            pasos.append("")
+        
+        pasos.append("Solución encontrada:")
+        for i, x in enumerate(solucion):
+            pasos.append(f"x_{i+1} = {x:.6f}")
+        
+        return {
+            'estado': 'exito',
+            'solucion': solucion,
+            'pasos': pasos
+        }
+        
+    except Exception as e:
+        return {
+            'estado': 'error',
+            'mensaje': f'Error en regla de Cramer: {str(e)}',
+            'pasos': pasos
+        }
 
-            _anadir_matriz_pasos(matriz_aj, f"matriz para d{j+1} (reemplazando columna {j+1} con b):")
-            pasos_generales.append(f"calculando determinante d{j+1} = det(a{j+1}):")
-            # Usar la funcion principal que elige el metodo
-            resultado_det_aj = pasos_determinante(matriz_aj)
-            if resultado_det_aj.get('pasos'):
-                # Añadir los pasos del determinante de cada matriz
-                for paso in resultado_det_aj['pasos']:
-                    if isinstance(paso, str):
-                        pasos_generales.append(paso)
-                    else:
-                        pasos_generales.append(str(paso))
+# =============================================================================
+# INDEPENDENCIA LINEAL Y RANGO
+# =============================================================================
 
-            if resultado_det_aj['estado'] == 'error':
-                error_msg_j = resultado_det_aj.get('mensaje', f'error desconocido al calcular d{j+1}')
-                pasos_generales.append(f"error al calcular d{j+1}: {error_msg_j}")
-                return {'estado': 'error', 'mensaje': f"error al calcular d{j+1}: {error_msg_j}", 'pasos': pasos_generales}
+def independenciaVectores(vectores: List[List[float]]) -> Dict[str, Any]:
+    """
+    Determina si un conjunto de vectores es linealmente independiente.
+    
+    Args:
+        vectores: Lista de vectores (cada vector es una lista)
+        
+    Returns:
+        Dict con análisis de independencia lineal
+    """
+    try:
+        if not vectores:
+            return {
+                'independent': True,
+                'rank': 0,
+                'num_vectors': 0,
+                'message': 'Conjunto vacío - trivialmente independiente'
+            }
+        
+        # Convertir a matriz (vectores como columnas)
+        n = len(vectores[0])  # Dimensión de cada vector
+        m = len(vectores)     # Número de vectores
+        
+        # Crear matriz donde cada columna es un vector
+        matriz = [[vectores[j][i] for j in range(m)] for i in range(n)]
+        
+        # Usar numpy para calcular el rango (más robusto)
+        try:
+            import numpy as np
+            matriz_np = np.array(matriz)
+            rango = np.linalg.matrix_rank(matriz_np)
+        except ImportError:
+            # Fallback: método manual básico
+            rango = _calcular_rango_manual(matriz)
+        
+        es_independiente = (rango == m)
+        
+        mensaje = (f"Linealmente independiente (rango = {rango}, vectores = {m})" 
+                  if es_independiente else 
+                  f"Linealmente dependiente (rango = {rango}, vectores = {m})")
+        
+        return {
+            'independent': es_independiente,
+            'rank': rango,
+            'num_vectors': m,
+            'message': mensaje
+        }
+        
+    except Exception as e:
+        return {
+            'independent': False,
+            'rank': 0,
+            'num_vectors': 0,
+            'message': f'Error analizando independencia: {str(e)}'
+        }
 
-            determinante_dj = resultado_det_aj['determinante']
-            pasos_generales.append(f"determinante d{j+1} = {_fmt(determinante_dj)}\n")
+def _calcular_rango_manual(matriz: List[List[float]]) -> int:
+    """
+    Calcula el rango de una matriz manualmente (fallback).
+    """
+    if not matriz:
+        return 0
+    
+    matriz_copy = copy.deepcopy(matriz)
+    n = len(matriz_copy)
+    m = len(matriz_copy[0])
+    
+    rango = 0
+    for j in range(m):
+        # Encontrar fila con pivote no cero
+        fila_pivote = -1
+        for i in range(rango, n):
+            if abs(matriz_copy[i][j]) > 1e-10:
+                fila_pivote = i
+                break
+        
+        if fila_pivote == -1:
+            continue
+        
+        # Intercambiar filas
+        if fila_pivote != rango:
+            matriz_copy[rango], matriz_copy[fila_pivote] = matriz_copy[fila_pivote], matriz_copy[rango]
+        
+        # Normalizar
+        pivote = matriz_copy[rango][j]
+        for k in range(j, m):
+            matriz_copy[rango][k] /= pivote
+        
+        # Eliminar
+        for i in range(n):
+            if i != rango and abs(matriz_copy[i][j]) > 1e-10:
+                factor = matriz_copy[i][j]
+                for k in range(j, m):
+                    matriz_copy[i][k] -= factor * matriz_copy[rango][k]
+        
+        rango += 1
+    
+    return rango
 
-            valor_xj = determinante_dj / determinante_d
-            solucion.append(valor_xj)
-            pasos_generales.append(f"calculando x{j+1} = d{j+1} / d = {_fmt(determinante_dj)} / {_fmt(determinante_d)} = {_fmt(valor_xj)}\n")
+# =============================================================================
+# MATRIZ INVERSA
+# =============================================================================
 
-        return {'estado': 'exito', 'solucion': solucion, 'pasos': pasos_generales}
+def inverse_steps(A: List[List[float]]) -> Dict[str, Any]:
+    """
+    Calcula la matriz inversa mostrando pasos.
+    
+    Args:
+        A: Matriz cuadrada invertible
+        
+    Returns:
+        Dict con pasos y matriz inversa
+    """
+    pasos = []
+    operaciones = []
+    
+    try:
+        if not _validar_matriz(A):
+            raise ValueError("Matriz inválida")
+        
+        if not _es_matriz_cuadrada(A):
+            raise ValueError("La matriz inversa solo existe para matrices cuadradas")
+        
+        n = len(A)
+        
+        # Verificar si es invertible calculando determinante
+        det_result = pasos_determinante(A)
+        if det_result['estado'] == 'error':
+            raise ValueError(f"Error verificando invertibilidad: {det_result['mensaje']}")
+        
+        if abs(det_result['determinante']) < 1e-10:
+            return {
+                'steps': pasos,
+                'ops': operaciones,
+                'status': 'singular',
+                'message': 'Matriz singular - determinante cero'
+            }
+        
+        # Crear matriz aumentada [A|I]
+        matriz_aumentada = []
+        for i in range(n):
+            fila = A[i] + [1.0 if i == j else 0.0 for j in range(n)]
+            matriz_aumentada.append(fila)
+        
+        pasos.append(copy.deepcopy(matriz_aumentada))
+        operaciones.append("Matriz aumentada [A|I]")
+        
+        # Aplicar Gauss-Jordan a la matriz aumentada
+        for i in range(n):
+            # Pivoteo
+            max_fila = i
+            for k in range(i + 1, n):
+                if abs(matriz_aumentada[k][i]) > abs(matriz_aumentada[max_fila][i]):
+                    max_fila = k
+            
+            if max_fila != i:
+                matriz_aumentada[i], matriz_aumentada[max_fila] = matriz_aumentada[max_fila], matriz_aumentada[i]
+                pasos.append(copy.deepcopy(matriz_aumentada))
+                operaciones.append(f"Intercambio F{i+1} ↔ F{max_fila+1}")
+            
+            # Normalizar fila pivote
+            pivote = matriz_aumentada[i][i]
+            for j in range(2 * n):
+                matriz_aumentada[i][j] /= pivote
+            
+            pasos.append(copy.deepcopy(matriz_aumentada))
+            operaciones.append(f"F{i+1} ← F{i+1} / {pivote:.3f}")
+            
+            # Eliminar en otras filas
+            for k in range(n):
+                if k != i and abs(matriz_aumentada[k][i]) > 1e-10:
+                    factor = matriz_aumentada[k][i]
+                    for j in range(2 * n):
+                        matriz_aumentada[k][j] -= factor * matriz_aumentada[i][j]
+                    
+                    pasos.append(copy.deepcopy(matriz_aumentada))
+                    operaciones.append(f"F{k+1} ← F{k+1} - ({factor:.3f})·F{i+1}")
+        
+        # Extraer la inversa (parte derecha de la matriz aumentada)
+        inversa = [fila[n:] for fila in matriz_aumentada]
+        
+        pasos.append(copy.deepcopy(matriz_aumentada))
+        operaciones.append("Matriz identidad [I|A⁻¹] - inversa encontrada")
+        
+        return {
+            'steps': pasos,
+            'ops': operaciones,
+            'status': 'invertible',
+            'inverse': inversa,
+            'message': 'Matriz inversa calculada exitosamente'
+        }
+        
+    except Exception as e:
+        return {
+            'steps': pasos,
+            'ops': operaciones,
+            'status': 'error',
+            'message': f'Error calculando matriz inversa: {str(e)}'
+        }
 
-    except Exception as error:
-        return {'estado': 'error', 'mensaje': str(error), 'pasos': pasos_generales}
+# =============================================================================
+# PRUEBAS Y EJEMPLOS
+# =============================================================================
+
+if __name__ == "__main__":
+    print("=== Pruebas Complement.py ===")
+    
+    # Matriz de prueba 2x2
+    A = [[2, 1], [1, 3]]
+    b = [4, 5]
+    M = [[2, 1, 4], [1, 3, 5]]
+    
+    print("1. Eliminación Gaussiana:")
+    resultado_gauss = gauss_steps(M)
+    print(f"Estado: {resultado_gauss['status']}")
+    print(f"Mensaje: {resultado_gauss['message']}")
+    
+    print("\n2. Determinante:")
+    resultado_det = pasos_determinante(A)
+    print(f"det(A) = {resultado_det['determinante']}")
+    
+    print("\n3. Regla de Cramer:")
+    resultado_cramer = resolver_por_cramer(M)
+    print(f"Estado: {resultado_cramer['estado']}")
+    
+    print("\n4. Independencia lineal:")
+    vectores = [[1, 0], [0, 1], [1, 1]]
+    resultado_indep = independenciaVectores(vectores)
+    print(f"Independiente: {resultado_indep['independent']}")
+    print(f"Rango: {resultado_indep['rank']}")

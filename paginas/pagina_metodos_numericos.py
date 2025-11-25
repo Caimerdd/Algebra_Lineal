@@ -99,7 +99,7 @@ class PaginaMetodosNumericos(PaginaBase):
         marco_resultados.grid_columnconfigure(0, weight=2) # Pasos más anchos
         marco_resultados.grid_columnconfigure(1, weight=1)
         
-        # --- CAMBIO: Bitácora (Ahora es un ScrollableFrame) ---
+        # Bitácora (ScrollableFrame)
         marco_pasos = ctk.CTkFrame(marco_resultados)
         marco_pasos.grid(row=0, column=0, sticky="nswe", padx=(0,6))
         marco_pasos.grid_columnconfigure(0, weight=1)
@@ -121,7 +121,6 @@ class PaginaMetodosNumericos(PaginaBase):
         ctk.CTkLabel(marco_resultado, text="Resultado Final", 
                     font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, sticky="w", padx=8, pady=6)
         
-        # --- CAMBIO: Caja de resultado resaltada ---
         self.resultado_caja = ctk.CTkTextbox(marco_resultado, height=220, 
                                              font=ctk.CTkFont(family="monospace", size=14, weight="bold"),
                                              border_color=COLOR_NUMERICOS[1],
@@ -130,96 +129,117 @@ class PaginaMetodosNumericos(PaginaBase):
         self.resultado_caja.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0,8))
         self.resultado_caja.configure(state="disabled")
 
-    # --- NUEVAS FUNCIONES DE UI ---
+    # --- NUEVAS FUNCIONES DE UI OPTIMIZADAS ---
     def _limpiar_pasos_scroll(self):
         """Elimina todos los widgets hijos del frame de pasos."""
-        for widget in self.pasos_scroll_frame.winfo_children():
-            widget.destroy()
+        try:
+            for widget in self.pasos_scroll_frame.winfo_children():
+                widget.destroy()
+        except Exception as e:
+            print(f"Error al limpiar pasos: {e}")
             
     def _crear_bloque_texto(self, titulo: str, texto: str):
         """Crea un bloque de texto (título + cuerpo) en el frame de pasos."""
-        paso_frame = ctk.CTkFrame(self.pasos_scroll_frame, fg_color="transparent")
-        paso_frame.pack(fill="x", pady=(0, 10))
-        
-        lbl_titulo = ctk.CTkLabel(paso_frame, text=titulo.upper(), 
-                                  font=ctk.CTkFont(size=12, weight="bold"),
-                                  text_color=COLOR_NUMERICOS[0])
-        lbl_titulo.pack(anchor="w", padx=5)
-        
-        lbl_texto = ctk.CTkLabel(paso_frame, text=texto, 
-                                font=ctk.CTkFont(family="monospace", size=13), 
-                                justify="left")
-        lbl_texto.pack(anchor="w", padx=20, pady=2)
-        
+        try:
+            paso_frame = ctk.CTkFrame(self.pasos_scroll_frame, fg_color="transparent")
+            paso_frame.pack(fill="x", pady=(0, 10))
+            
+            lbl_titulo = ctk.CTkLabel(paso_frame, text=titulo.upper(), 
+                                      font=ctk.CTkFont(size=12, weight="bold"),
+                                      text_color=COLOR_NUMERICOS[0])
+            lbl_titulo.pack(anchor="w", padx=5)
+            
+            lbl_texto = ctk.CTkLabel(paso_frame, text=texto, 
+                                    font=ctk.CTkFont(family="monospace", size=13), 
+                                    justify="left")
+            lbl_texto.pack(anchor="w", padx=20, pady=2)
+        except Exception as e:
+            print(f"Error al crear bloque de texto: {e}")
+            
     def _crear_tabla_pasos(self, headers: list, data: list):
         """Crea una tabla gráfica dentro del frame de pasos."""
-        tabla_frame = ctk.CTkFrame(self.pasos_scroll_frame, fg_color=COLOR_FONDO_SECUNDARIO)
-        tabla_frame.pack(fill="x", expand=True, pady=10)
-        
-        num_cols = len(headers)
-        
-        # --- Crear Encabezados ---
-        for c, header in enumerate(headers):
-            cell = ctk.CTkLabel(tabla_frame, text=header, 
-                                font=ctk.CTkFont(family="monospace", size=12, weight="bold"),
-                                text_color=COLOR_NUMERICOS[0])
-            cell.grid(row=0, column=c, padx=8, pady=4, sticky="w")
+        try:
+            tabla_frame = ctk.CTkFrame(self.pasos_scroll_frame, fg_color=COLOR_FONDO_SECUNDARIO)
+            tabla_frame.pack(fill="x", expand=True, pady=10)
             
-        # --- Crear Filas de Datos ---
-        for r, row_data in enumerate(data):
-            for c, cell_data in enumerate(row_data):
-                # Formatear el dato
-                if isinstance(cell_data, float):
-                    if abs(cell_data) > 1e4 or abs(cell_data) < 1e-3 and cell_data != 0:
-                        texto = f"{cell_data:.4e}" # Científica
+            num_cols = len(headers)
+            
+            # --- Crear Encabezados ---
+            for c, header in enumerate(headers):
+                cell = ctk.CTkLabel(tabla_frame, text=header, 
+                                    font=ctk.CTkFont(family="monospace", size=12, weight="bold"),
+                                    text_color=COLOR_NUMERICOS[0])
+                cell.grid(row=0, column=c, padx=8, pady=4, sticky="w")
+                
+            # --- Crear Filas de Datos ---
+            for r, row_data in enumerate(data):
+                for c, cell_data in enumerate(row_data):
+                    # Formatear el dato
+                    if isinstance(cell_data, float):
+                        if abs(cell_data) > 1e4 or abs(cell_data) < 1e-3 and cell_data != 0:
+                            texto = f"{cell_data:.4e}" # Científica
+                        else:
+                            texto = f"{cell_data:.6f}" # Decimal
                     else:
-                        texto = f"{cell_data:.6f}" # Decimal
-                else:
-                    texto = str(cell_data)
-                    
-                cell = ctk.CTkLabel(tabla_frame, text=texto, 
-                                    font=ctk.CTkFont(family="monospace", size=12))
-                cell.grid(row=r + 1, column=c, padx=8, pady=2, sticky="w")
+                        texto = str(cell_data)
+                        
+                    cell = ctk.CTkLabel(tabla_frame, text=texto, 
+                                        font=ctk.CTkFont(family="monospace", size=12))
+                    cell.grid(row=r + 1, column=c, padx=8, pady=2, sticky="w")
+        except Exception as e:
+            print(f"Error al crear tabla: {e}")
     
-    # --- FUNCIONES MODIFICADAS ---
+    # --- FUNCIONES MODIFICADAS Y OPTIMIZADAS ---
     def _actualizar_entradas_metodo(self):
-        metodo = self.metodo_numerico_var.get()
-        if metodo in ["Biseccion", "Falsa Posicion"]:
-            self.lbl_intervalo.configure(text="Intervalo [a, b]:")
-            self.ent_intervalo_a.configure(placeholder_text="a")
-            self.ent_intervalo_b.configure(placeholder_text="b")
-            self.ent_intervalo_b.grid() 
-        elif metodo == "Newton-Raphson":
-            self.lbl_intervalo.configure(text="Punto Inicial (x0):")
-            self.ent_intervalo_a.configure(placeholder_text="x0")
-            self.ent_intervalo_b.grid_remove() 
-        elif metodo == "Secante":
-            self.lbl_intervalo.configure(text="Puntos [x0, x1]:")
-            self.ent_intervalo_a.configure(placeholder_text="x0")
-            self.ent_intervalo_b.configure(placeholder_text="x1")
-            self.ent_intervalo_b.grid() 
+        """Actualiza la interfaz según el método seleccionado."""
+        try:
+            metodo = self.metodo_numerico_var.get()
+            if metodo in ["Biseccion", "Falsa Posicion"]:
+                self.lbl_intervalo.configure(text="Intervalo [a, b]:")
+                self.ent_intervalo_a.configure(placeholder_text="a")
+                self.ent_intervalo_b.configure(placeholder_text="b")
+                self.ent_intervalo_b.grid() 
+            elif metodo == "Newton-Raphson":
+                self.lbl_intervalo.configure(text="Punto Inicial (x0):")
+                self.ent_intervalo_a.configure(placeholder_text="x0")
+                self.ent_intervalo_b.grid_remove() 
+            elif metodo == "Secante":
+                self.lbl_intervalo.configure(text="Puntos [x0, x1]:")
+                self.ent_intervalo_a.configure(placeholder_text="x0")
+                self.ent_intervalo_b.configure(placeholder_text="x1")
+                self.ent_intervalo_b.grid() 
+        except Exception as e:
+            print(f"Error al actualizar entradas: {e}")
 
     def cargar_ejemplo(self, ej_num: int):
-        self.limpiar_numerico()
-        self.ent_tolerancia_e.delete(0, 'end')
-        
-        if ej_num == 1:
-            self.ent_funcion_fx.insert(0, "cos(x) - x")
-            self.ent_intervalo_a.insert(0, "0")
-            self.ent_intervalo_b.insert(0, "1")
-            self.ent_tolerancia_e.insert(0, "0.0001")
-        elif ej_num == 2:
-            self.ent_funcion_fx.insert(0, "log(x) - exp(-x)")
-            self.ent_intervalo_a.insert(0, "0.5")
-            self.ent_intervalo_b.insert(0, "2")
-            self.ent_tolerancia_e.insert(0, "0.0001")
-        elif ej_num == 3:
-            self.ent_funcion_fx.insert(0, "x**2 + 4")
-            self.ent_intervalo_a.insert(0, "-2")
-            self.ent_intervalo_b.insert(0, "2")
-            self.ent_tolerancia_e.insert(0, "0.0001")
+        """Carga ejemplos predefinidos en la interfaz."""
+        try:
+            self.limpiar_numerico()
+            
+            if ej_num == 1:
+                self.ent_funcion_fx.insert(0, "cos(x) - x")
+                self.ent_intervalo_a.insert(0, "0")
+                self.ent_intervalo_b.insert(0, "1")
+                self.ent_tolerancia_e.insert(0, "0.0001")
+            elif ej_num == 2:
+                self.ent_funcion_fx.insert(0, "log(x) - exp(-x)")
+                self.ent_intervalo_a.insert(0, "0.5")
+                self.ent_intervalo_b.insert(0, "2")
+                self.ent_tolerancia_e.insert(0, "0.0001")
+            elif ej_num == 3:
+                self.ent_funcion_fx.insert(0, "x**2 + 4")
+                self.ent_intervalo_a.insert(0, "-2")
+                self.ent_intervalo_b.insert(0, "2")
+                self.ent_tolerancia_e.insert(0, "0.0001")
+                
+            # Actualizar UI según el método
+            self._actualizar_entradas_metodo()
+            
+        except Exception as e:
+            print(f"Error al cargar ejemplo: {e}")
 
     def calcular_operacion_numerica(self):
+        """Ejecuta el método numérico seleccionado."""
         self._limpiar_pasos_scroll()
         self.resultado_caja.configure(state="normal")
         self.resultado_caja.delete('0.0', 'end')
@@ -237,38 +257,46 @@ class PaginaMetodosNumericos(PaginaBase):
         metodo = self.metodo_numerico_var.get()
         
         try:
-            funcion_str = self.ent_funcion_fx.get()
-            tol_str = self.ent_tolerancia_e.get()
+            funcion_str = self.ent_funcion_fx.get().strip()
+            tol_str = self.ent_tolerancia_e.get().strip()
             
-            if not funcion_str or not tol_str:
-                raise ValueError("La función y la tolerancia son obligatorias.")
+            if not funcion_str:
+                raise ValueError("La función no puede estar vacía.")
+            if not tol_str:
+                raise ValueError("La tolerancia no puede estar vacía.")
             
             tolerancia = parse_valor(tol_str)
-            if tolerancia <= 0: raise ValueError("La tolerancia debe ser un numero positivo.")
+            if tolerancia <= 0: 
+                raise ValueError("La tolerancia debe ser un numero positivo.")
 
             res = None
             
             if metodo == 'Biseccion' or metodo == 'Falsa Posicion':
-                a_str, b_str = self.ent_intervalo_a.get(), self.ent_intervalo_b.get()
-                if not a_str or not b_str: raise ValueError("Los campos 'a' y 'b' son obligatorios.")
+                a_str, b_str = self.ent_intervalo_a.get().strip(), self.ent_intervalo_b.get().strip()
+                if not a_str or not b_str: 
+                    raise ValueError("Los campos 'a' y 'b' son obligatorios.")
                 a, b = parse_valor(a_str), parse_valor(b_str)
-                if a >= b: raise ValueError("El intervalo es invalido (a debe ser menor que b).")
+                if a >= b: 
+                    raise ValueError("El intervalo es invalido (a debe ser menor que b).")
                 res = metodo_biseccion(funcion_str, a, b, tolerancia) if metodo == 'Biseccion' else metodo_falsa_posicion(funcion_str, a, b, tolerancia)
             
             elif metodo == 'Newton-Raphson':
-                x0_str = self.ent_intervalo_a.get()
-                if not x0_str: raise ValueError("El punto inicial 'x0' es obligatorio.")
+                x0_str = self.ent_intervalo_a.get().strip()
+                if not x0_str: 
+                    raise ValueError("El punto inicial 'x0' es obligatorio.")
                 x0 = parse_valor(x0_str)
                 res = metodo_newton_raphson(funcion_str, x0, tolerancia)
 
             elif metodo == 'Secante':
-                x0_str, x1_str = self.ent_intervalo_a.get(), self.ent_intervalo_b.get()
-                if not x0_str or not x1_str: raise ValueError("Los puntos 'x0' y 'x1' son obligatorios.")
+                x0_str, x1_str = self.ent_intervalo_a.get().strip(), self.ent_intervalo_b.get().strip()
+                if not x0_str or not x1_str: 
+                    raise ValueError("Los puntos 'x0' y 'x1' son obligatorios.")
                 x0, x1 = parse_valor(x0_str), parse_valor(x1_str)
-                if x0 == x1: raise ValueError("Los puntos iniciales no pueden ser iguales.")
+                if x0 == x1: 
+                    raise ValueError("Los puntos iniciales no pueden ser iguales.")
                 res = metodo_secante(funcion_str, x0, x1, tolerancia)
 
-            # --- RENDERIZADO DE RESULTADOS ---
+            # --- RENDERIZADO DE RESULTADOS OPTIMIZADO ---
             
             # 1. Mostrar info previa (si existe)
             if res.get('info_previa'):
@@ -301,29 +329,30 @@ class PaginaMetodosNumericos(PaginaBase):
         self.resultado_caja.configure(state="disabled")
 
     def graficar_funcion_interna(self):
-        # ... (Esta función no necesita cambios, la dejamos como estaba) ...
+        """Muestra la gráfica de la función actual."""
         try:
-            funcion_str = self.ent_funcion_fx.get()
+            funcion_str = self.ent_funcion_fx.get().strip()
             if not funcion_str:
                 raise ValueError("El campo de la función está vacío.")
 
-            a_str = self.ent_intervalo_a.get()
-            b_str = self.ent_intervalo_b.get()
+            a_str = self.ent_intervalo_a.get().strip()
+            b_str = self.ent_intervalo_b.get().strip()
             metodo = self.metodo_numerico_var.get()
             
-            a, b = -10, 10 
+            a, b = -10, 10  # Valores por defecto
             
             try:
                 if metodo in ["Biseccion", "Falsa Posicion", "Secante"] and a_str and b_str:
                     a = parse_valor(a_str)
                     b = parse_valor(b_str)
-                    if a > b: a, b = b, a 
+                    if a > b: 
+                        a, b = b, a  # Asegurar orden correcto
                 elif metodo == "Newton-Raphson" and a_str:
                     x0 = parse_valor(a_str)
-                    a = x0 - 5 
+                    a = x0 - 5  # Margen alrededor de x0
                     b = x0 + 5
             except:
-                pass 
+                pass  # Usar valores por defecto si hay error
             
             ventana_grafica = ctk.CTkToplevel(self)
             ventana_grafica.title(f"Gráfica de f(x) = {funcion_str}")
@@ -356,8 +385,8 @@ class PaginaMetodosNumericos(PaginaBase):
                     ax.axvline(x=b_val, color='green', linestyle='--', alpha=0.6, linewidth=1, label=f'b/x1 = {b_val}')
                     ax.axvspan(min(a_val, b_val), max(a_val, b_val), alpha=0.1, color='gray', label='Intervalo inicial')
                 elif metodo == "Newton-Raphson" and a_str:
-                     x0_val = parse_valor(a_str)
-                     ax.axvline(x=x0_val, color='red', linestyle='--', alpha=0.6, linewidth=1, label=f'x0 = {x0_val}')
+                    x0_val = parse_valor(a_str)
+                    ax.axvline(x=x0_val, color='red', linestyle='--', alpha=0.6, linewidth=1, label=f'x0 = {x0_val}')
                 
                 ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
                 ax.set_axisbelow(True)
@@ -375,6 +404,7 @@ class PaginaMetodosNumericos(PaginaBase):
                 
                 ax.legend(loc='best', fontsize=10, framealpha=0.9, shadow=True)
                 
+                # Mostrar raíz si está disponible en resultados
                 self.resultado_caja.configure(state="normal")
                 contenido = self.resultado_caja.get('1.0', 'end-1c')
                 self.resultado_caja.configure(state="disabled")
@@ -395,7 +425,7 @@ class PaginaMetodosNumericos(PaginaBase):
                                        arrowprops=dict(arrowstyle="->", connectionstyle="arc3,rad=0"))
                             ax.legend(loc='best', fontsize=9)
                     except:
-                        pass 
+                        pass  # No mostrar raíz si hay error
 
             except Exception as e:
                 ax.text(0.5, 0.5, f'Error al graficar la función:\n\n{str(e)}', 
@@ -421,7 +451,7 @@ class PaginaMetodosNumericos(PaginaBase):
                     try:
                         fig.savefig(archivo, dpi=300, bbox_inches='tight', facecolor='white')
                         self.resultado_caja.configure(state="normal")
-                        self.resultado_caja.insert('end', f"\nGràfica guardada.")
+                        self.resultado_caja.insert('end', f"\nGráfica guardada correctamente.")
                         self.resultado_caja.configure(state="disabled")
                     except Exception as e:
                         self.resultado_caja.configure(state="normal")
@@ -449,24 +479,40 @@ class PaginaMetodosNumericos(PaginaBase):
             self.resultado_caja.configure(state="disabled")
 
     def limpiar_numerico(self):
-        if hasattr(self, 'ent_funcion_fx'):
-            self.ent_funcion_fx.delete(0, 'end')
-        if hasattr(self, 'ent_intervalo_a'):
-            self.ent_intervalo_a.delete(0, 'end')
-        if hasattr(self, 'ent_intervalo_b'):
-            self.ent_intervalo_b.delete(0, 'end')
+        """Limpia completamente la interfaz de métodos numéricos - VERSIÓN CORREGIDA"""
+        try:
+            # Limpiar campos de entrada
+            if hasattr(self, 'ent_funcion_fx'):
+                self.ent_funcion_fx.delete(0, 'end')
             
-        if hasattr(self, 'ent_tolerancia_e'):
-            self.ent_tolerancia_e.delete(0, 'end')
-            self.ent_tolerancia_e.insert(0, "0.0001") 
+            if hasattr(self, 'ent_intervalo_a'):
+                self.ent_intervalo_a.delete(0, 'end')
             
-        if hasattr(self, 'pasos_scroll_frame'):
-            self._limpiar_pasos_scroll()
+            if hasattr(self, 'ent_intervalo_b'):
+                self.ent_intervalo_b.delete(0, 'end')
+                
+            # Restablecer tolerancia por defecto
+            if hasattr(self, 'ent_tolerancia_e'):
+                self.ent_tolerancia_e.delete(0, 'end')
+                self.ent_tolerancia_e.insert(0, "0.0001")
             
-        if hasattr(self, 'resultado_caja'):
-            self.resultado_caja.configure(state="normal")
-            self.resultado_caja.delete('0.0', 'end')
-            self.resultado_caja.configure(state="disabled")
+            # Restablecer método por defecto y actualizar UI
+            if hasattr(self, 'metodo_numerico_var'):
+                self.metodo_numerico_var.set("Biseccion")
+                self._actualizar_entradas_metodo()
             
+            # Limpiar resultados
+            if hasattr(self, 'resultado_caja'):
+                self.resultado_caja.configure(state="normal")
+                self.resultado_caja.delete('0.0', 'end')
+                self.resultado_caja.configure(state="disabled")
+            
+            # Limpiar bitácora de pasos
+            if hasattr(self, 'pasos_scroll_frame'):
+                self._limpiar_pasos_scroll()
+                
+        except Exception as e:
+            print(f"Error al limpiar interfaz numérica: {e}")
+
     def mostrar(self):
         self.grid(row=0, column=0, sticky="nsew")

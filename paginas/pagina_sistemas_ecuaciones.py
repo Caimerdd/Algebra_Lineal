@@ -42,6 +42,14 @@ class PaginaSistemasEcuaciones(PaginaBase):
         self.grid_columnconfigure(0, weight=1)
     
     def crear_interfaz(self):
+        # INICIALIZAR PRIMERO las variables (CORRECCIÓN CRÍTICA)
+        self.entradas_a = []
+        self.entradas_b = []
+        self.grilla_a = []
+        self.grilla_b = []
+        self.matriz_a_visible = True
+        self.matriz_b_visible = True
+
         # Selector de Metodo
         marco_metodo = ctk.CTkFrame(self, fg_color=COLOR_FONDO_SECUNDARIO)
         marco_metodo.grid(row=0, column=0, sticky="ew", padx=12, pady=8)
@@ -124,14 +132,6 @@ class PaginaSistemasEcuaciones(PaginaBase):
         self.ent_columnas_b.grid(row=0, column=3)
         self.marco_grilla_b = ctk.CTkFrame(self.marco_b)
         self.marco_grilla_b.grid(row=2, column=0, sticky="nsew", padx=8, pady=(0, 8))
-
-        # INICIALIZAR LISTAS VACÍAS AQUÍ (igual que en operaciones_matriciales)
-        self.entradas_a = []
-        self.entradas_b = []
-        self.grilla_a = []
-        self.grilla_b = []
-        self.matriz_a_visible = True
-        self.matriz_b_visible = True
 
         # Controles
         marco_controles = ctk.CTkFrame(self)
@@ -337,9 +337,15 @@ class PaginaSistemasEcuaciones(PaginaBase):
                     matriz_a[i][j] = coeff_val
             matriz_b = [[val] for val in vector_const]
 
-            self.var_filas_a.set(str(num_filas))
-            self.ent_columnas_a.delete(0, 'end'); self.ent_columnas_a.insert(0, str(num_vars))
-            self.ent_filas_b.delete(0, 'end'); self.ent_filas_b.insert(0, str(num_filas))
+            # CORRECCIÓN: Verificar que los campos existan antes de modificar
+            if hasattr(self, 'var_filas_a'):
+                self.var_filas_a.set(str(num_filas))
+            if hasattr(self, 'ent_columnas_a'):
+                self.ent_columnas_a.delete(0, 'end')
+                self.ent_columnas_a.insert(0, str(num_vars))
+            if hasattr(self, 'ent_filas_b'):
+                self.ent_filas_b.delete(0, 'end')
+                self.ent_filas_b.insert(0, str(num_filas))
 
             self.generar_cuadriculas_matriz()
             self.poblar_cuadricula(self.entradas_a, matriz_a)
@@ -466,21 +472,35 @@ class PaginaSistemasEcuaciones(PaginaBase):
         self.resultado_caja.configure(state="disabled")
 
     def limpiar_matrices(self):
-        for fila_entradas in self.entradas_a:
-            for entrada in fila_entradas:
-                if entrada: entrada.delete(0,'end')
-        for fila_entradas in self.entradas_b:
-            for entrada in fila_entradas:
-                if entrada: entrada.delete(0,'end')
-        
-        self.resultado_caja.configure(state="normal")
-        self.resultado_caja.delete('0.0','end')
-        self.resultado_caja.configure(state="disabled")
-        
-        self._limpiar_pasos_scroll()
-        
-        self.caja_ecuaciones.delete('1.0', 'end')
-        self.caja_ecuaciones.insert("0.0", "2x + 3y - z = 5\nx - y + 2z = 10\n3x + 2y = 0")
+        """Limpia completamente las matrices y resultados"""
+        try:
+            # Limpiar entradas de matrices
+            for fila_entradas in self.entradas_a:
+                for entrada in fila_entradas:
+                    if entrada: 
+                        entrada.delete(0,'end')
+            
+            for fila_entradas in self.entradas_b:
+                for entrada in fila_entradas:
+                    if entrada: 
+                        entrada.delete(0,'end')
+            
+            # Limpiar caja de ecuaciones
+            if hasattr(self, 'caja_ecuaciones'):
+                self.caja_ecuaciones.delete('1.0', 'end')
+                self.caja_ecuaciones.insert("0.0", "2x + 3y - z = 5\nx - y + 2z = 10\n3x + 2y = 0")
+            
+            # Limpiar resultados
+            if hasattr(self, 'resultado_caja'):
+                self.resultado_caja.configure(state="normal")
+                self.resultado_caja.delete('0.0','end')
+                self.resultado_caja.configure(state="disabled")
+            
+            # Limpiar bitácora
+            self._limpiar_pasos_scroll()
+            
+        except Exception as e:
+            print(f"Error al limpiar matrices: {e}")
 
     def mostrar(self):
         self.grid(row=0, column=0, sticky="nsew")
