@@ -11,10 +11,8 @@ try:
         pasos_determinante, independenciaVectores
     )
     LOGICA_DISPONIBLE = True
-except ImportError as e:
+except ImportError:
     LOGICA_DISPONIBLE = False
-    print(f"❌ Error cargando Complement.py: {e}")
-    # Funciones dummy
     def pasos_determinante(M): return {'estado': 'error', 'mensaje': 'Lógica no disponible'}
     def independenciaVectores(M): return {'independent': False, 'rank': 0}
 
@@ -35,30 +33,21 @@ class PaginaPropiedadesMatrices(PaginaBase):
         self.grid_columnconfigure(0, weight=1)
 
     def crear_barra_navegacion(self):
-        """Barra de navegación interna para Álgebra Lineal."""
         marco_nav = ctk.CTkFrame(self, fg_color="transparent", height=40)
         marco_nav.grid(row=0, column=0, sticky="ew", padx=12, pady=(8,0))
         
         btn_sistemas = ctk.CTkButton(marco_nav, text="Sistemas de Ecuaciones", 
-                                     fg_color=COLOR_BOTON_SECUNDARIO,
-                                     hover_color=COLOR_BOTON_SECUNDARIO_HOVER,
-                                     height=30,
+                                     fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER, height=30,
                                      command=lambda: self.app.mostrar_pagina("sistemas_ecuaciones"))
         btn_sistemas.pack(side="left", padx=(0, 5), expand=True, fill="x")
         
         btn_ops = ctk.CTkButton(marco_nav, text="Operaciones Matriciales", 
-                                fg_color=COLOR_BOTON_SECUNDARIO,
-                                hover_color=COLOR_BOTON_SECUNDARIO_HOVER,
-                                height=30,
+                                fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER, height=30,
                                 command=lambda: self.app.mostrar_pagina("operaciones_matriciales"))
         btn_ops.pack(side="left", padx=5, expand=True, fill="x")
         
-        # Botón actual (Deshabilitado visualmente)
         btn_props = ctk.CTkButton(marco_nav, text="Propiedades", 
-                                  fg_color=COLOR_ALGEBRA,
-                                  state="disabled",
-                                  text_color_disabled=("white", "white"),
-                                  height=30)
+                                  fg_color=COLOR_ALGEBRA, state="disabled", text_color_disabled=("white", "white"), height=30)
         btn_props.pack(side="left", padx=(5, 0), expand=True, fill="x")
     
     def crear_interfaz(self):
@@ -66,7 +55,7 @@ class PaginaPropiedadesMatrices(PaginaBase):
         marco_propiedad = ctk.CTkFrame(self, fg_color=COLOR_FONDO_SECUNDARIO)
         marco_propiedad.grid(row=1, column=0, sticky="ew", padx=12, pady=8)
         
-        ctk.CTkLabel(marco_propiedad, text="Propiedad a Calcular:", 
+        ctk.CTkLabel(marco_propiedad, text="Propiedad:", 
                     font=ctk.CTkFont(size=16, weight="bold")).grid(row=0, column=0, padx=(12, 8), pady=12)
         
         self.propiedad_matricial_var = ctk.StringVar(value="Determinante")
@@ -74,8 +63,15 @@ class PaginaPropiedadesMatrices(PaginaBase):
         
         for i, propiedad in enumerate(propiedades):
             rb = ctk.CTkRadioButton(marco_propiedad, text=propiedad, variable=self.propiedad_matricial_var, 
-                                   value=propiedad, font=ctk.CTkFont(size=13))
+                                   value=propiedad, font=ctk.CTkFont(size=13),
+                                   command=self._actualizar_info_propiedad) # Actualizar texto ayuda
             rb.grid(row=0, column=i+1, padx=8, pady=12)
+
+        # --- ETIQUETA DINÁMICA DE AYUDA ---
+        self.lbl_info_prop = ctk.CTkLabel(marco_propiedad, text="", 
+                                         font=ctk.CTkFont(size=12, slant="italic"),
+                                         text_color="gray70")
+        self.lbl_info_prop.grid(row=1, column=0, columnspan=4, pady=(0, 8), sticky="ew")
 
         # Marco para matriz
         marco_matriz = ctk.CTkFrame(self)
@@ -117,6 +113,7 @@ class PaginaPropiedadesMatrices(PaginaBase):
         ctk.CTkButton(marco_controles, text="Generar Cuadrícula", command=self.generar_cuadriculas_propiedades, fg_color=COLOR_ALGEBRA, hover_color=COLOR_HOVER).grid(row=0, column=0, padx=6)
         ctk.CTkButton(marco_controles, text="Calcular", command=self.calcular_propiedad_matricial, fg_color=COLOR_ALGEBRA, hover_color=COLOR_HOVER).grid(row=0, column=1, padx=6)
         ctk.CTkButton(marco_controles, text="Limpiar", command=self.limpiar_propiedades, fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER).grid(row=0, column=2, padx=6)
+        ctk.CTkButton(marco_controles, text="Ayuda ❓", command=lambda: self.app.mostrar_ayuda_sympy(), fg_color=COLOR_BOTON_SECUNDARIO, hover_color=COLOR_BOTON_SECUNDARIO_HOVER, width=80).grid(row=0, column=3, padx=6)
 
         # Resultados
         marco_resultados = ctk.CTkFrame(self)
@@ -148,23 +145,32 @@ class PaginaPropiedadesMatrices(PaginaBase):
                                              wrap="word")
         self.resultado_caja.grid(row=1, column=0, sticky="nsew", padx=8, pady=(0, 8))
         self.resultado_caja.configure(state="disabled")
+        
+        # Inicializar ayuda
+        self._actualizar_info_propiedad()
 
-    # --- Funciones de UI para "Paso a Paso" ---
-    
+    # --- Ayuda Dinámica ---
+    def _actualizar_info_propiedad(self):
+        prop = self.propiedad_matricial_var.get()
+        txt = ""
+        if prop == "Determinante":
+            txt = "Valor escalar que indica si la matriz tiene inversa (Det ≠ 0) y su factor de escala."
+        elif prop == "Independencia Lineal":
+            txt = "Verifica si los vectores columna de la matriz son linealmente independientes."
+        elif prop == "Rango":
+            txt = "Número máximo de filas o columnas linealmente independientes."
+        self.lbl_info_prop.configure(text=txt)
+
+    # --- UI Helpers ---
     def _limpiar_pasos_scroll(self):
-        for widget in self.pasos_scroll_frame.winfo_children():
-            widget.destroy()
+        for widget in self.pasos_scroll_frame.winfo_children(): widget.destroy()
             
     def _crear_bloque_texto(self, titulo: str, math: str):
         paso_frame = ctk.CTkFrame(self.pasos_scroll_frame, fg_color="transparent")
         paso_frame.pack(fill="x", pady=(0, 10))
-        lbl_titulo = ctk.CTkLabel(paso_frame, text=titulo.upper(), 
-                                  font=ctk.CTkFont(size=12, weight="bold"),
-                                  text_color=COLOR_ALGEBRA[0])
+        lbl_titulo = ctk.CTkLabel(paso_frame, text=titulo.upper(), font=ctk.CTkFont(size=12, weight="bold"), text_color=COLOR_ALGEBRA[0])
         lbl_titulo.pack(anchor="w", padx=5)
-        lbl_math = ctk.CTkLabel(paso_frame, text=math, 
-                                font=ctk.CTkFont(family="monospace", size=13), 
-                                justify="left")
+        lbl_math = ctk.CTkLabel(paso_frame, text=math, font=ctk.CTkFont(family="monospace", size=13), justify="left")
         lbl_math.pack(anchor="w", padx=20, pady=2)
         
     def _matriz_a_pretty(self, M):
@@ -172,29 +178,17 @@ class PaginaPropiedadesMatrices(PaginaBase):
         except Exception: return str(M)
 
     def _renderizar_pasos_texto(self, pasos_lista: list):
-        """Renderiza una lista de strings o textos devuelta por el backend."""
         self._limpiar_pasos_scroll()
-        titulo_actual = "INICIO"
-        math_actual = []
-        
+        titulo_actual = "INICIO"; math_actual = []
         for linea in pasos_lista:
             linea = str(linea).strip()
             if not linea: continue
-            
-            # Detectar si la línea parece un título (ej: "Paso 1:", "Expandiendo:", "Matriz:")
             if (":" in linea and len(linea) < 50 and not linea.startswith("[") and not linea.startswith("|")):
-                if math_actual:
-                    self._crear_bloque_texto(titulo_actual, "\n".join(math_actual))
-                titulo_actual = linea
-                math_actual = []
-            else:
-                math_actual.append(linea)
-        
-        if math_actual:
-            self._crear_bloque_texto(titulo_actual, "\n".join(math_actual))
+                if math_actual: self._crear_bloque_texto(titulo_actual, "\n".join(math_actual))
+                titulo_actual = linea; math_actual = []
+            else: math_actual.append(linea)
+        if math_actual: self._crear_bloque_texto(titulo_actual, "\n".join(math_actual))
 
-    # --- Funciones de Lógica ---
-    
     def toggle_matriz_visibility(self, matriz: str):
         if matriz == 'a':
             self.matriz_a_visible = not self.matriz_a_visible
@@ -209,8 +203,7 @@ class PaginaPropiedadesMatrices(PaginaBase):
         try:
             filas_a = int(self.ent_filas_a.get())
             cols_a = int(self.ent_columnas_a.get())
-            if filas_a <= 0 or cols_a <= 0:
-                raise ValueError("Las dimensiones deben ser números enteros positivos")
+            if filas_a <= 0 or cols_a <= 0: raise ValueError("Dimensiones deben ser enteros positivos")
 
             for widget in self.grilla_a: widget.destroy()
             self.grilla_a = []
@@ -222,7 +215,6 @@ class PaginaPropiedadesMatrices(PaginaBase):
                     e.grid(row=i, column=j, padx=2, pady=2)
                     self.grilla_a.append(e)
                     self.entradas_a[i][j] = e
-                    # INICIO LIMPIO: No insertamos valores
 
             self.limpiar_propiedades(borrar_entradas=False)
 
@@ -244,8 +236,8 @@ class PaginaPropiedadesMatrices(PaginaBase):
                     if texto:
                         celdas_no_vacias += 1
                         try: matriz[i][j] = parse_valor(texto)
-                        except ValueError as e: raise ValueError(f'Valor inválido en ({i+1},{j+1}): {e}')
-        if celdas_no_vacias == 0 and filas * cols > 0: raise ValueError("La matriz no puede estar vacía")
+                        except ValueError: raise ValueError(f'Valor inválido en ({i+1},{j+1})')
+        if celdas_no_vacias == 0: raise ValueError("La matriz no puede estar vacía")
         return matriz
 
     def calcular_propiedad_matricial(self):
@@ -254,7 +246,7 @@ class PaginaPropiedadesMatrices(PaginaBase):
         self.resultado_caja.delete('0.0','end')
 
         if not LOGICA_DISPONIBLE:
-            self.resultado_caja.insert('0.0', "ERROR: No se pudo cargar Complement.py")
+            self.resultado_caja.insert('0.0', "ERROR: Complement.py no cargado")
             self.resultado_caja.configure(state="disabled")
             return
 
@@ -270,43 +262,30 @@ class PaginaPropiedadesMatrices(PaginaBase):
         
         try:
             if propiedad == 'Determinante':
-                if len(A) != len(A[0]):
-                    raise ValueError("El determinante solo existe para matrices cuadradas")
-                
+                if len(A) != len(A[0]): raise ValueError("Matriz debe ser cuadrada")
                 res = pasos_determinante(A) 
-                
-                if res.get('pasos'):
-                    self._renderizar_pasos_texto(res['pasos'])
-                    
-                if res['estado'] == 'exito':
-                    resultado_texto = f"El determinante es:\n\n{fmt(res['determinante'])}"
-                else:
-                    resultado_texto = f"Error: {res['mensaje']}"
+                if res.get('pasos'): self._renderizar_pasos_texto(res['pasos'])
+                if res['estado'] == 'exito': resultado_texto = f"Determinante:\n{fmt(res['determinante'])}"
+                else: resultado_texto = f"Error: {res['mensaje']}"
 
             elif propiedad == 'Independencia Lineal':
-                self._crear_bloque_texto("MATRIZ DE VECTORES", self._matriz_a_pretty(A))
+                self._crear_bloque_texto("MATRIZ", self._matriz_a_pretty(A))
                 ver = independenciaVectores(A)
-                
-                if ver.get('num_vectors',0) == 0: 
-                    resultado_texto = 'No hay vectores (matriz vacía)'
+                if ver.get('num_vectors',0) == 0: resultado_texto = 'Matriz vacía'
                 else:
                     r, k = ver.get('rank'), ver.get('num_vectors')
-                    self._crear_bloque_texto("ANÁLISIS DE RANGO", f"Vectores totales = {k}\nRango (Vectores independientes) = {r}")
-                    resultado_texto = f"Rango = {r} / {k} vectores\n"
-                    resultado_texto += ('El conjunto es LINEALMENTE INDEPENDIENTE' if ver.get('independent') else 'El conjunto es LINEALMENTE DEPENDIENTE')
+                    self._crear_bloque_texto("ANÁLISIS", f"Vectores: {k}\nRango: {r}")
+                    resultado_texto = f"Rango = {r} / {k}\n" + ('INDEPENDIENTES' if ver.get('independent') else 'DEPENDIENTES')
 
             elif propiedad == 'Rango':
                 self._crear_bloque_texto("MATRIZ A", self._matriz_a_pretty(A))
-                ver = independenciaVectores(A) # Reutilizamos la lógica de rango de esta función
-                rango = ver.get('rank', 0)
-                resultado_texto = f"El rango de la matriz es: {rango}"
+                ver = independenciaVectores(A)
+                resultado_texto = f"Rango: {ver.get('rank', 0)}"
 
             self.resultado_caja.insert('0.0', resultado_texto)
 
-        except ValueError as e:
-            self.resultado_caja.insert('0.0', f'Error: {e}')
-        except Exception as e:
-            self.resultado_caja.insert('0.0', f'Error inesperado: {e}')
+        except ValueError as e: self.resultado_caja.insert('0.0', f'Error: {e}')
+        except Exception as e: self.resultado_caja.insert('0.0', f'Error: {e}')
             
         self.resultado_caja.configure(state="disabled")
 
@@ -319,7 +298,6 @@ class PaginaPropiedadesMatrices(PaginaBase):
         self.resultado_caja.configure(state="normal")
         self.resultado_caja.delete('0.0','end')
         self.resultado_caja.configure(state="disabled")
-        
         self._limpiar_pasos_scroll()
 
     def mostrar(self):

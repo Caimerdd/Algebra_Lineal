@@ -1,18 +1,6 @@
 ('C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
  'lineal\\Algebra_Lineal\\build\\MathPro\\PYZ-00.pyz',
- [('Complement',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\Complement.py',
-   'PYMODULE'),
-  ('LogicaFundamentos',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\LogicaFundamentos.py',
-   'PYMODULE'),
-  ('MetodosNumericos',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\MetodosNumericos.py',
-   'PYMODULE'),
-  ('PIL',
+ [('PIL',
    'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
    'lineal\\Algebra_Lineal\\.venv\\Lib\\site-packages\\PIL\\__init__.py',
    'PYMODULE'),
@@ -397,10 +385,6 @@
   ('_strptime', 'C:\\Python314\\Lib\\_strptime.py', 'PYMODULE'),
   ('_threading_local', 'C:\\Python314\\Lib\\_threading_local.py', 'PYMODULE'),
   ('annotationlib', 'C:\\Python314\\Lib\\annotationlib.py', 'PYMODULE'),
-  ('app_config',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\app_config.py',
-   'PYMODULE'),
   ('argparse', 'C:\\Python314\\Lib\\argparse.py', 'PYMODULE'),
   ('ast', 'C:\\Python314\\Lib\\ast.py', 'PYMODULE'),
   ('asyncio', 'C:\\Python314\\Lib\\asyncio\\__init__.py', 'PYMODULE'),
@@ -1089,17 +1073,9 @@
    'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
    'lineal\\Algebra_Lineal\\.venv\\Lib\\site-packages\\matplotlib\\backends\\__init__.py',
    'PYMODULE'),
-  ('matplotlib.backends._backend_tk',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\.venv\\Lib\\site-packages\\matplotlib\\backends\\_backend_tk.py',
-   'PYMODULE'),
   ('matplotlib.backends.backend_agg',
    'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
    'lineal\\Algebra_Lineal\\.venv\\Lib\\site-packages\\matplotlib\\backends\\backend_agg.py',
-   'PYMODULE'),
-  ('matplotlib.backends.backend_tkagg',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\.venv\\Lib\\site-packages\\matplotlib\\backends\\backend_tkagg.py',
    'PYMODULE'),
   ('matplotlib.backends.backend_webagg',
    'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
@@ -2283,43 +2259,6 @@
   ('packaging.version',
    'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
    'lineal\\Algebra_Lineal\\.venv\\Lib\\site-packages\\packaging\\version.py',
-   'PYMODULE'),
-  ('paginas', '-', 'PYMODULE'),
-  ('paginas.pagina_base',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_base.py',
-   'PYMODULE'),
-  ('paginas.pagina_diferencial',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_diferencial.py',
-   'PYMODULE'),
-  ('paginas.pagina_fundamentos',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_fundamentos.py',
-   'PYMODULE'),
-  ('paginas.pagina_inicio',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_inicio.py',
-   'PYMODULE'),
-  ('paginas.pagina_integral',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_integral.py',
-   'PYMODULE'),
-  ('paginas.pagina_metodos_numericos',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_metodos_numericos.py',
-   'PYMODULE'),
-  ('paginas.pagina_operaciones_matriciales',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_operaciones_matriciales.py',
-   'PYMODULE'),
-  ('paginas.pagina_propiedades_matrices',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_propiedades_matrices.py',
-   'PYMODULE'),
-  ('paginas.pagina_sistemas_ecuaciones',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\paginas\\pagina_sistemas_ecuaciones.py',
    'PYMODULE'),
   ('pathlib', 'C:\\Python314\\Lib\\pathlib\\__init__.py', 'PYMODULE'),
   ('pathlib._os', 'C:\\Python314\\Lib\\pathlib\\_os.py', 'PYMODULE'),
@@ -5346,11 +5285,6 @@
   ('tracemalloc', 'C:\\Python314\\Lib\\tracemalloc.py', 'PYMODULE'),
   ('tty', 'C:\\Python314\\Lib\\tty.py', 'PYMODULE'),
   ('typing', 'C:\\Python314\\Lib\\typing.py', 'PYMODULE'),
-  ('ui_components', '-', 'PYMODULE'),
-  ('ui_components.ventana_ayuda',
-   'C:\\Users\\luisg\\OneDrive\\Desktop\\algebra '
-   'lineal\\Algebra_Lineal\\ui_components\\ventana_ayuda.py',
-   'PYMODULE'),
   ('unittest', 'C:\\Python314\\Lib\\unittest\\__init__.py', 'PYMODULE'),
   ('unittest._log', 'C:\\Python314\\Lib\\unittest\\_log.py', 'PYMODULE'),
   ('unittest.async_case',

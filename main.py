@@ -1,90 +1,89 @@
 import customtkinter as ctk
-# --- IMPORTACIONES DE CONFIGURACIÓN ---
-from app_config import (COLOR_BOTON_SECUNDARIO, COLOR_BOTON_SECUNDARIO_HOVER, 
-                        COLOR_ACENTO, COLOR_HOVER, COLOR_ALGEBRA, COLOR_NUMERICOS,
-                        COLOR_FUNDAMENTOS, COLOR_DIFERENCIAL, COLOR_INTEGRAL)
-# ---------------------------------
-from paginas.pagina_inicio import PaginaInicio
+import sys
+import os
 
-# Importaciones con manejo de errores (Lazy Loading)
-# Si falta un archivo, crea una clase vacía para que la app no falle al abrir
+# --- IMPORTACIONES DE CONFIGURACIÓN ---
+try:
+    from app_config import (COLOR_BOTON_SECUNDARIO, COLOR_BOTON_SECUNDARIO_HOVER, 
+                            COLOR_ACENTO, COLOR_HOVER, COLOR_ALGEBRA, COLOR_NUMERICOS,
+                            COLOR_FUNDAMENTOS, COLOR_DIFERENCIAL, COLOR_INTEGRAL)
+    print("✅ Configuración cargada.")
+except ImportError as e:
+    print(f"❌ Error cargando app_config: {e}")
+
+# --- IMPORTACIÓN DE PÁGINAS (LAZY LOADING) ---
+# Esto evita que la app falle si falta un archivo mientras desarrollas
+
+try:
+    from paginas.pagina_inicio import PaginaInicio
+    print("✅ PaginaInicio cargada.")
+except ImportError as e:
+    print(f"❌ Error cargando PaginaInicio: {e}")
+
+# Definimos clases dummy por si falla la importación real
+class DummyPage:
+    def __init__(self, parent, app): pass
+    def crear_widgets(self): pass
+    def mostrar(self): pass
+
+# Intentamos importar cada página
 try:
     from paginas.pagina_sistemas_ecuaciones import PaginaSistemasEcuaciones
     print("✅ PaginaSistemasEcuaciones cargada")
 except ImportError as e:
-    print(f"❌ Error cargando PaginaSistemasEcuaciones: {e}")
-    class PaginaSistemasEcuaciones:
-        def __init__(self, parent, app): pass
-        def crear_widgets(self): pass
-        def mostrar(self): pass
+    print(f"⚠️ Error cargando PaginaSistemasEcuaciones: {e}")
+    PaginaSistemasEcuaciones = DummyPage
 
 try:
     from paginas.pagina_operaciones_matriciales import PaginaOperacionesMatriciales
     print("✅ PaginaOperacionesMatriciales cargada")
 except ImportError as e:
-    print(f"❌ Error cargando PaginaOperacionesMatriciales: {e}")
-    class PaginaOperacionesMatriciales:
-        def __init__(self, parent, app): pass
-        def crear_widgets(self): pass
-        def mostrar(self): pass
+    print(f"⚠️ Error cargando PaginaOperacionesMatriciales: {e}")
+    PaginaOperacionesMatriciales = DummyPage
 
 try:
     from paginas.pagina_propiedades_matrices import PaginaPropiedadesMatrices
     print("✅ PaginaPropiedadesMatrices cargada")
 except ImportError as e:
-    print(f"❌ Error cargando PaginaPropiedadesMatrices: {e}")
-    class PaginaPropiedadesMatrices:
-        def __init__(self, parent, app): pass
-        def crear_widgets(self): pass
-        def mostrar(self): pass
+    print(f"⚠️ Error cargando PaginaPropiedadesMatrices: {e}")
+    PaginaPropiedadesMatrices = DummyPage
 
 try:
     from paginas.pagina_metodos_numericos import PaginaMetodosNumericos
     print("✅ PaginaMetodosNumericos cargada")
 except ImportError as e:
-    print(f"❌ Error cargando PaginaMetodosNumericos: {e}")
-    class PaginaMetodosNumericos:
-        def __init__(self, parent, app): pass
-        def crear_widgets(self): pass
-        def mostrar(self): pass
+    print(f"⚠️ Error cargando PaginaMetodosNumericos: {e}")
+    PaginaMetodosNumericos = DummyPage
 
 try:
     from paginas.pagina_fundamentos import PaginaFundamentos
     print("✅ PaginaFundamentos cargada")
 except ImportError as e:
-    print(f"❌ Error cargando PaginaFundamentos: {e}")
-    class PaginaFundamentos:
-        def __init__(self, parent, app): pass
-        def crear_widgets(self): pass
-        def mostrar(self): pass
+    print(f"⚠️ Error cargando PaginaFundamentos: {e}")
+    PaginaFundamentos = DummyPage
 
 try:
     from paginas.pagina_diferencial import PaginaDiferencial
     print("✅ PaginaDiferencial cargada")
 except ImportError as e:
-    print(f"❌ Error cargando PaginaDiferencial: {e}")
-    class PaginaDiferencial:
-        def __init__(self, parent, app): pass
-        def crear_widgets(self): pass
-        def mostrar(self): pass
+    print(f"⚠️ Error cargando PaginaDiferencial: {e}")
+    PaginaDiferencial = DummyPage
 
 try:
     from paginas.pagina_integral import PaginaIntegral
     print("✅ PaginaIntegral cargada")
 except ImportError as e:
-    print(f"❌ Error cargando PaginaIntegral: {e}")
-    class PaginaIntegral:
-        def __init__(self, parent, app): pass
-        def crear_widgets(self): pass
-        def mostrar(self): pass
+    print(f"⚠️ Error cargando PaginaIntegral: {e}")
+    PaginaIntegral = DummyPage
 
 try:
     from ui_components.ventana_ayuda import VentanaAyudaSymPy
     print("✅ VentanaAyudaSymPy cargada")
 except ImportError as e:
-    print(f"❌ Error cargando VentanaAyudaSymPy: {e}")
+    # print(f"⚠️ Error cargando VentanaAyudaSymPy: {e}") # Opcional, para no ensuciar consola
     class VentanaAyudaSymPy:
         def __init__(self, parent): pass
+
 
 class AplicacionPrincipal(ctk.CTk):
     def __init__(self):
@@ -94,23 +93,28 @@ class AplicacionPrincipal(ctk.CTk):
         self.geometry("1200x800")
         self.minsize(1000, 700)
         
+        # Configuración del Grid Principal
+        self.grid_rowconfigure(0, weight=1)
+        self.grid_columnconfigure(0, weight=0) # Menú lateral fijo
+        self.grid_columnconfigure(1, weight=1) # Contenido expandible
+        
+        # Estado del menú
         self.menu_visible = False 
         self.ancho_menu = 280
-
-        self.grid_rowconfigure(0, weight=1)
-        self.grid_columnconfigure(0, weight=0) 
-        self.grid_columnconfigure(1, weight=1)
         
         self.pantalla_actual = "inicio"
         
+        # Inicialización de UI
         self.crear_panel_nav()
         self.crear_panel_principal()
         self.inicializar_paginas()
+        
+        # Mostrar inicio
         self.mostrar_pagina("inicio")
 
     def inicializar_paginas(self):
         self.paginas = {}
-        
+        # Instanciamos las páginas
         self.paginas["inicio"] = PaginaInicio(self.area_contenido, self)
         self.paginas["sistemas_ecuaciones"] = PaginaSistemasEcuaciones(self.area_contenido, self)
         self.paginas["operaciones_matriciales"] = PaginaOperacionesMatriciales(self.area_contenido, self)
@@ -120,11 +124,13 @@ class AplicacionPrincipal(ctk.CTk):
         self.paginas["diferencial"] = PaginaDiferencial(self.area_contenido, self)
         self.paginas["integral"] = PaginaIntegral(self.area_contenido, self)
         
+        # Ocultar todas inicialmente (menos la que se muestre explícitamente)
         for pagina in self.paginas.values():
             if hasattr(pagina, 'grid_remove'):
                 pagina.grid_remove()
 
     def mostrar_pagina(self, nombre_pagina):
+        # Ocultar la actual
         if self.pantalla_actual in self.paginas:
             if hasattr(self.paginas[self.pantalla_actual], 'grid_remove'):
                 self.paginas[self.pantalla_actual].grid_remove()
@@ -132,12 +138,15 @@ class AplicacionPrincipal(ctk.CTk):
         self.pantalla_actual = nombre_pagina
         pagina = self.paginas[nombre_pagina]
         
+        # Mostrar la nueva
         if hasattr(pagina, 'grid'):
             pagina.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
         
+        # Refrescar si tiene método mostrar
         if hasattr(pagina, 'mostrar'):
             pagina.mostrar()
         
+        # Gestión del botón "Regresar al Inicio" en el menú
         if nombre_pagina == "inicio":
             self.btn_inicio.grid_remove()
         else:
@@ -278,8 +287,21 @@ class AplicacionPrincipal(ctk.CTk):
         VentanaAyudaSymPy(self)
 
 if __name__ == "__main__":
-    ctk.set_appearance_mode("dark")
-    ctk.set_default_color_theme("blue")
-    
-    app = AplicacionPrincipal()
-    app.mainloop()
+    print("🚀 Iniciando MathPro...")
+    try:
+        # Configuración inicial de CustomTkinter
+        ctk.set_appearance_mode("dark")
+        ctk.set_default_color_theme("blue")
+        print("✅ Tema configurado.")
+        
+        app = AplicacionPrincipal()
+        print("✅ Ventana creada. Entrando al mainloop...")
+        
+        app.mainloop()
+        print("🏁 Programa cerrado correctamente.")
+        
+    except Exception as e:
+        print(f"❌ ERROR CRÍTICO AL INICIAR: {e}")
+        import traceback
+        traceback.print_exc()
+        input("Presiona ENTER para salir...")
