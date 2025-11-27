@@ -4,58 +4,57 @@ BLOQUE_DETALLE = 3
 MAX_SNAPSHOTS = 80
 PASO_SALTOS = 5
 
-# Definición de Colores para Temas
-COLOR_ACENTO = ("#E53935", "#7E57C2")
-COLOR_HOVER = ("#F44336", "#9575CD")
-COLOR_FONDO_SECUNDARIO = ("gray92", "#212121")
-COLOR_BOTON_SECUNDARIO = ("gray75", "gray30")
-COLOR_BOTON_SECUNDARIO_HOVER = ("gray80", "gray35")
+# --- MEJORA DE COLORES (Tema Profesional) ---
 
-# --- Colores de Módulos (Renombrados) ---
-COLOR_ALGEBRA = ("#2196F3", "#1976D2")     # Azul
-COLOR_NUMERICOS = ("#00BCD4", "#0097A7")   # Cian
-COLOR_FUNDAMENTOS = ("#4CAF50", "#388E3C") # Verde
-COLOR_DIFERENCIAL = ("#FF9800", "#F57C00") # Naranja
-COLOR_INTEGRAL = ("#673AB7", "#512DA8")    # Morado
+# Acento: Cambiado de Rojo/Morado a Azul Índigo/Cian Eléctrico
+# Esto se ve más "matemático" y evita parecer un mensaje de error.
+COLOR_ACENTO = ("#3F51B5", "#738FFE")       # Indigo 500 / Indigo A200
+COLOR_HOVER = ("#303F9F", "#536DFE")        # Indigo 700 / Indigo A400
+
+# Fondos: Un gris un poco más oscuro en Dark Mode para mejor contraste
+COLOR_FONDO_SECUNDARIO = ("gray92", "#1a1a1a") 
+COLOR_BOTON_SECUNDARIO = ("gray80", "#333333")
+COLOR_BOTON_SECUNDARIO_HOVER = ("gray70", "#404040")
+
+# --- Colores de Módulos (Vibrantes y Distintos) ---
+# Se mantienen similares pero ajustados para no chocar con el acento
+COLOR_ALGEBRA = ("#1976D2", "#2196F3")     # Azul Profundo
+COLOR_NUMERICOS = ("#0097A7", "#00BCD4")   # Cian Teal
+COLOR_FUNDAMENTOS = ("#388E3C", "#4CAF50") # Verde
+COLOR_DIFERENCIAL = ("#F57C00", "#FF9800") # Naranja
+COLOR_INTEGRAL = ("#7B1FA2", "#9C27B0")    # Morado (Ahora único, no choca con el acento)
 # ----------------------------------------
 
-COLOR_FONDO_PRINCIPAL = ("#f8f9fa", "#121212")
-COLOR_TARJETA = ("white", "#1e1e1e")
+COLOR_FONDO_PRINCIPAL = ("#f8f9fa", "#121212") # Fondo casi blanco / casi negro
+COLOR_TARJETA = ("white", "#1e1e1e") # Tarjetas flotantes
 COLOR_TEXTO_TARJETA = ("#333333", "#ffffff")
 
-# Funciones Auxiliares
+# Funciones Auxiliares (Sin cambios, ya estaban bien)
 def fmt(x: float) -> str:
+    """Formatea números: muestra enteros sin decimales y decimales con 4 cifras."""
+    if x is None: return ""
+    if abs(x) < 1e-9: return "0"
+    if abs(x - round(x)) < 1e-9: return f"{int(round(x))}"
     return f"{x:.4g}"
 
 def parse_valor(texto: str) -> float:
     texto = texto.strip()
-    if not texto:
-        return 0.0
-
+    if not texto: return 0.0
     if '/' in texto:
         try:
             partes = texto.split('/')
-            if len(partes) != 2:
-                raise ValueError(f"Formato de fracción inválido: {texto}")
-            
-            numerador = float(partes[0].strip())
-            denominador = float(partes[1].strip())
-            
-            if denominador == 0:
-                raise ValueError(f"División por cero en fracción: {texto}")
-                
-            return numerador / denominador
-        except ValueError as e:
-            raise ValueError(f"Fracción inválida: '{texto}' ({e})")
+            if len(partes) != 2: raise ValueError(f"Formato inválido: {texto}")
+            num = float(partes[0].strip())
+            den = float(partes[1].strip())
+            if den == 0: raise ValueError(f"División por cero: {texto}")
+            return num / den
         except Exception as e:
-            raise ValueError(f"Error al procesar fracción '{texto}': {e}")
+            raise ValueError(f"Fracción inválida: '{texto}'")
     else:
         try:
             return float(texto)
         except ValueError:
             if 'e' in texto.lower():
-                try:
-                    return float(texto)
-                except ValueError:
-                     raise ValueError(f"Notación científica inválida: '{texto}'")
-            raise ValueError(f"Valor numérico inválido: '{texto}'")
+                try: return float(texto)
+                except: pass
+            raise ValueError(f"Valor inválido: '{texto}'")

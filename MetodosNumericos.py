@@ -2,36 +2,27 @@ import math
 from typing import Dict, List, Callable, Any
 import sympy as sp
 
-# Diccionario de funciones seguras
-SAFE_MATH_FUNCTIONS = {
-    'cos': math.cos,
-    'sin': math.sin,
-    'tan': math.tan,
-    'acos': math.acos,
-    'asin': math.asin,
-    'atan': math.atan,
-    'exp': math.exp,
-    'log': math.log,
-    'log10': math.log10,
-    'sqrt': math.sqrt,
-    'pow': math.pow,
-    'pi': math.pi,
-    'e': math.e,
-    'abs': abs,
-}
-
 def _crear_funcion_segura(funcion_str: str) -> Callable[[float], float]:
-    if any(c in funcion_str for c in '[]_{}'):
-        raise ValueError("La función contiene caracteres no permitidos.")
-    code = compile(funcion_str, "<string>", "eval")
-    def funcion_evaluada(x: float) -> float:
-        try:
-            return eval(code, {"__builtins__": {}}, {**SAFE_MATH_FUNCTIONS, 'x': x})
-        except ZeroDivisionError:
-            return float('inf')
-        except Exception as e:
-            raise ValueError(f"Error al evaluar f({x}): {e}")
-    return funcion_evaluada
+    x = sp.Symbol('x')
+    try:
+        funcion_str_limpia = funcion_str.replace('^', '**')
+        expr = sp.sympify(funcion_str_limpia)
+        f_lambda = sp.lambdify(x, expr, modules=['math', 'mpmath', 'sympy'])
+        
+        def funcion_evaluada(val_x: float) -> float:
+            try:
+                res = f_lambda(val_x)
+                if isinstance(res, complex):
+                    raise ValueError("Resultado complejo no soportado")
+                return float(res)
+            except ZeroDivisionError:
+                return float('inf')
+            except Exception as e:
+                raise ValueError(f"Error evaluando en {val_x}: {e}")
+                
+        return funcion_evaluada
+    except Exception as e:
+        raise ValueError(f"Error al procesar la función: {e}")
 
 def _crear_funcion_y_derivada_segura(funcion_str: str) -> Dict[str, Any]:
     x = sp.Symbol('x')
@@ -40,30 +31,25 @@ def _crear_funcion_y_derivada_segura(funcion_str: str) -> Dict[str, Any]:
         f_sym = sp.sympify(funcion_str_sympy)
         df_sym = sp.diff(f_sym, x)
         
-        f_lambda = sp.lambdify(x, f_sym, modules='math')
-        df_lambda = sp.lambdify(x, df_sym, modules='math')
+        f_lambda = sp.lambdify(x, f_sym, modules=['math', 'mpmath', 'sympy'])
+        df_lambda = sp.lambdify(x, df_sym, modules=['math', 'mpmath', 'sympy'])
         
         return {
             'f': f_lambda,
             'df': df_lambda,
-            'f_str': str(f_sym),
-            'df_str': str(df_sym)
+            'f_str': sp.latex(f_sym),
+            'df_str': sp.latex(df_sym)
         }
         
     except Exception as e:
         raise ValueError(f"Error procesando la función con SymPy: {e}")
 
-
-# --- METODOS DE INTERVALO (Bisección y Falsa Posición) ---
-
 def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
-    # Lista para info de texto (antes de la tabla)
     info_previa = []
-    # Lista para los datos de la tabla
     tabla_data = []
     
     try:
-        f = _crear_funcion_segura(funcion_str.replace('math.', ''))
+        f = _crear_funcion_segura(funcion_str)
         fa, fb = f(a), f(b)
         info_previa.append(f"Intervalo inicial: [{a}, {b}]")
         info_previa.append(f"f(a) = {fa:.6e}")
@@ -78,7 +64,6 @@ def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, ma
     xr_nuevo = (a + b) / 2
     error = 1.0
     
-    # Definimos los encabezados de la tabla
     tabla_headers = ["Iter", "a", "b", "f(a)", "f(b)", "xr", "f(xr)", "Error"]
     
     for i in range(max_iter):
@@ -88,7 +73,6 @@ def metodo_biseccion(funcion_str: str, a: float, b: float, tolerancia: float, ma
             if abs(xr_nuevo) < 1e-10: error = abs(xr_nuevo - xr_anterior)
             else: error = abs((xr_nuevo - xr_anterior) / xr_nuevo)
         
-        # Añadimos los NÚMEROS a la lista de datos
         fila_datos = [
             i + 1, a, b, fa, fb, xr_nuevo, fxr,
             error if i > 0 else "N/A"
@@ -121,7 +105,7 @@ def metodo_falsa_posicion(funcion_str: str, a: float, b: float, tolerancia: floa
     info_previa = []
     tabla_data = []
     try:
-        f = _crear_funcion_segura(funcion_str.replace('math.', ''))
+        f = _crear_funcion_segura(funcion_str)
         fa, fb = f(a), f(b)
         info_previa.append(f"Intervalo inicial: [{a}, {b}]")
         info_previa.append(f"f(a) = {fa:.6e}")
@@ -181,8 +165,6 @@ def metodo_falsa_posicion(funcion_str: str, a: float, b: float, tolerancia: floa
             'raiz': xr_nuevo, 'iteraciones': max_iter, 'error': error,
             'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
 
-# --- METODOS ABIERTOS (Newton y Secante) ---
-
 def metodo_newton_raphson(funcion_str: str, x0: float, tolerancia: float, max_iter: int = 100) -> Dict[str, Any]:
     info_previa = []
     tabla_data = []
@@ -203,8 +185,12 @@ def metodo_newton_raphson(funcion_str: str, x0: float, tolerancia: float, max_it
     tabla_headers = ["Iter", "xi", "f(xi)", "f'(xi)", "xi+1", "Error"]
     
     for i in range(max_iter):
-        f_xi = f(xi)
-        df_xi = df(xi)
+        try:
+            f_xi = f(xi)
+            df_xi = df(xi)
+        except Exception as e:
+            return {'estado': 'error', 'mensaje': f"Error evaluando función: {e}", 
+                    'info_previa': info_previa, 'tabla_headers': tabla_headers, 'tabla_data': tabla_data}
         
         if abs(df_xi) < 1e-10:
             return {'estado': 'error', 'mensaje': f"División por cero: La derivada es cero en x = {xi}", 
@@ -242,7 +228,7 @@ def metodo_secante(funcion_str: str, x0: float, x1: float, tolerancia: float, ma
     info_previa = []
     tabla_data = []
     try:
-        f = _crear_funcion_segura(funcion_str.replace('math.', ''))
+        f = _crear_funcion_segura(funcion_str)
         info_previa.append(f"Punto inicial x0 = {x0}")
         info_previa.append(f"Punto inicial x1 = {x1}")
     except Exception as e:

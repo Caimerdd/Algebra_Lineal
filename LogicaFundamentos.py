@@ -1,94 +1,159 @@
-"""
-LogicaFundamentos.py - Módulo para operaciones con polinomios
-"""
+import sympy as sp
 
 def operar_polinomios(p1_str, p2_str, operacion):
-    """Operaciones básicas con polinomios"""
     try:
         pasos = []
+        x = sp.symbols('x')
         
-        # Paso 1: Mostrar los polinomios de entrada
+        try:
+            poly1 = sp.sympify(p1_str)
+            poly2 = sp.sympify(p2_str)
+        except Exception:
+            raise ValueError("Formato inválido. Asegúrese de usar 'x' como variable.")
+
         pasos.append({
-            'titulo': 'Polinomios de entrada',
-            'math': f'P(x) = {p1_str}\nQ(x) = {p2_str}'
+            'titulo': 'Entrada',
+            'math': f'P(x) = {sp.latex(poly1)}\\nQ(x) = {sp.latex(poly2)}'
         })
         
-        # Paso 2: Mostrar la operación
-        if operacion == "Suma":
-            simbolo = "+"
-            resultado_texto = f"({p1_str}) + ({p2_str})"
-            pasos.append({
-                'titulo': 'Realizando suma',
-                'math': f'P(x) + Q(x) = {resultado_texto}'
-            })
-        elif operacion == "Resta":
-            simbolo = "-"
-            resultado_texto = f"({p1_str}) - ({p2_str})"
-            pasos.append({
-                'titulo': 'Realizando resta',
-                'math': f'P(x) - Q(x) = {resultado_texto}'
-            })
-        elif operacion == "Multiplicación":
-            simbolo = "×"
-            resultado_texto = f"({p1_str}) × ({p2_str})"
-            pasos.append({
-                'titulo': 'Realizando multiplicación',
-                'math': f'P(x) × Q(x) = {resultado_texto}'
-            })
+        resultado_math = None
         
-        # Para esta versión, devolvemos el texto formateado
-        resultado_final = f"Resultado de {operacion}:\n{resultado_texto}"
+        if operacion == "Suma":
+            resultado_math = sp.simplify(poly1 + poly2)
+            pasos.append({'titulo': 'Operación', 'math': f'({sp.latex(poly1)}) + ({sp.latex(poly2)})'})
+            
+        elif operacion == "Resta":
+            resultado_math = sp.simplify(poly1 - poly2)
+            pasos.append({'titulo': 'Operación', 'math': f'({sp.latex(poly1)}) - ({sp.latex(poly2)})'})
+            
+        elif operacion == "Multiplicación":
+            resultado_math = sp.expand(poly1 * poly2)
+            pasos.append({'titulo': 'Operación', 'math': f'({sp.latex(poly1)}) \\cdot ({sp.latex(poly2)})'})
+            
+        elif operacion == "División":
+            q, r = sp.div(poly1, poly2)
+            pasos.append({
+                'titulo': 'División', 
+                'math': f'\\frac{{{sp.latex(poly1)}}}{{{sp.latex(poly2)}}}'
+            })
+            pasos.append({
+                'titulo': 'Resultado',
+                'math': f'Cociente: {sp.latex(q)} \\quad Residuo: {sp.latex(r)}'
+            })
+            return {
+                'estado': 'exito',
+                'resultado_math': str(q),
+                'resultado_latex': f"Cociente: {sp.latex(q)}",
+                'pasos': pasos
+            }
+
+        resultado_latex = sp.latex(resultado_math)
         
         pasos.append({
-            'titulo': 'Resultado',
-            'math': resultado_final
+            'titulo': 'Resultado Final',
+            'math': resultado_latex
         })
         
         return {
             'estado': 'exito',
-            'resultado_math': resultado_final,
+            'resultado_math': str(resultado_math),
+            'resultado_latex': resultado_latex,
             'pasos': pasos
         }
         
     except Exception as e:
+        return {'estado': 'error', 'mensaje': f'Error: {str(e)}', 'pasos': []}
+
+def factorizar_expresion(expr_str):
+    try:
+        pasos = []
+        try:
+            expr = sp.sympify(expr_str)
+        except:
+            raise ValueError("Expresión inválida.")
+
+        pasos.append({
+            'titulo': 'Expresión Original',
+            'math': sp.latex(expr)
+        })
+
+        resultado = sp.factor(expr)
+
+        if resultado == expr:
+            pasos.append({'titulo': 'Análisis', 'math': 'La expresión ya es irreducible.'})
+        else:
+            pasos.append({'titulo': 'Factorización', 'math': f'{sp.latex(expr)} = {sp.latex(resultado)}'})
+
         return {
-            'estado': 'error',
-            'mensaje': f'Error en la operación: {str(e)}',
-            'pasos': []
+            'estado': 'exito',
+            'resultado_math': str(resultado),
+            'resultado_latex': sp.latex(resultado),
+            'pasos': pasos
         }
+    except Exception as e:
+        return {'estado': 'error', 'mensaje': str(e), 'pasos': []}
+
+def simplificar_expresion(expr_str):
+    try:
+        pasos = []
+        try:
+            expr = sp.sympify(expr_str)
+        except:
+            raise ValueError("Expresión inválida.")
+
+        pasos.append({
+            'titulo': 'Expresión Original',
+            'math': sp.latex(expr)
+        })
+
+        resultado = sp.simplify(expr)
+
+        pasos.append({
+            'titulo': 'Expresión Simplificada',
+            'math': sp.latex(resultado)
+        })
+
+        return {
+            'estado': 'exito',
+            'resultado_math': str(resultado),
+            'resultado_latex': sp.latex(resultado),
+            'pasos': pasos
+        }
+    except Exception as e:
+        return {'estado': 'error', 'mensaje': str(e), 'pasos': []}
 
 def resolver_polinomio(p1_str):
-    """Encontrar raíces de polinomios"""
     try:
         pasos = []
+        x = sp.symbols('x')
+        try:
+            poly = sp.sympify(p1_str)
+        except:
+            raise ValueError("Polinomio inválido.")
         
+        pasos.append({'titulo': 'Ecuación', 'math': f'{sp.latex(poly)} = 0'})
+        
+        soluciones = sp.solve(poly, x, dict=False)
+        
+        sol_latex = []
+        for s in soluciones:
+            sol_latex.append(sp.latex(s))
+
+        if not sol_latex:
+            resultado_texto = "Sin solución."
+        else:
+            resultado_texto = "x \\in \\{" + ", ".join(sol_latex) + "\\}"
+
         pasos.append({
-            'titulo': 'Polinomio de entrada',
-            'math': f'P(x) = {p1_str}'
-        })
-        
-        pasos.append({
-            'titulo': 'Buscando raíces',
-            'math': f'Resolviendo P(x) = 0 para: {p1_str}'
-        })
-        
-        # Para esta versión simple, mostramos un mensaje
-        resultado_final = f"Análisis de raíces para:\nP(x) = {p1_str}\n\n(En una versión completa aquí se calcularían las raíces reales)"
-        
-        pasos.append({
-            'titulo': 'Información',
-            'math': 'Esta funcionalidad requiere sympy para cálculos completos'
+            'titulo': 'Conjunto Solución',
+            'math': resultado_texto
         })
         
         return {
             'estado': 'exito',
-            'resultado_math': resultado_final,
+            'resultado_math': str(soluciones),
+            'resultado_latex': resultado_texto,
             'pasos': pasos
         }
-        
     except Exception as e:
-        return {
-            'estado': 'error',
-            'mensaje': f'Error al resolver: {str(e)}',
-            'pasos': []
-        }
+        return {'estado': 'error', 'mensaje': str(e), 'pasos': []}

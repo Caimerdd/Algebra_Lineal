@@ -1,22 +1,20 @@
 import customtkinter as ctk
-# --- IMPORTACIONES MODIFICADAS ---
+# --- IMPORTACIONES DE CONFIGURACIÓN ---
 from app_config import (COLOR_BOTON_SECUNDARIO, COLOR_BOTON_SECUNDARIO_HOVER, 
                         COLOR_ACENTO, COLOR_HOVER, COLOR_ALGEBRA, COLOR_NUMERICOS,
                         COLOR_FUNDAMENTOS, COLOR_DIFERENCIAL, COLOR_INTEGRAL)
 # ---------------------------------
 from paginas.pagina_inicio import PaginaInicio
 
-# Importaciones con manejo de errores
+# Importaciones con manejo de errores (Lazy Loading)
+# Si falta un archivo, crea una clase vacía para que la app no falle al abrir
 try:
     from paginas.pagina_sistemas_ecuaciones import PaginaSistemasEcuaciones
     print("✅ PaginaSistemasEcuaciones cargada")
 except ImportError as e:
     print(f"❌ Error cargando PaginaSistemasEcuaciones: {e}")
-    # Clase de respaldo
     class PaginaSistemasEcuaciones:
-        def __init__(self, parent, app):
-            self.parent = parent
-            self.app = app
+        def __init__(self, parent, app): pass
         def crear_widgets(self): pass
         def mostrar(self): pass
 
@@ -26,9 +24,7 @@ try:
 except ImportError as e:
     print(f"❌ Error cargando PaginaOperacionesMatriciales: {e}")
     class PaginaOperacionesMatriciales:
-        def __init__(self, parent, app):
-            self.parent = parent
-            self.app = app
+        def __init__(self, parent, app): pass
         def crear_widgets(self): pass
         def mostrar(self): pass
 
@@ -38,9 +34,7 @@ try:
 except ImportError as e:
     print(f"❌ Error cargando PaginaPropiedadesMatrices: {e}")
     class PaginaPropiedadesMatrices:
-        def __init__(self, parent, app):
-            self.parent = parent
-            self.app = app
+        def __init__(self, parent, app): pass
         def crear_widgets(self): pass
         def mostrar(self): pass
 
@@ -50,9 +44,7 @@ try:
 except ImportError as e:
     print(f"❌ Error cargando PaginaMetodosNumericos: {e}")
     class PaginaMetodosNumericos:
-        def __init__(self, parent, app):
-            self.parent = parent
-            self.app = app
+        def __init__(self, parent, app): pass
         def crear_widgets(self): pass
         def mostrar(self): pass
 
@@ -62,9 +54,7 @@ try:
 except ImportError as e:
     print(f"❌ Error cargando PaginaFundamentos: {e}")
     class PaginaFundamentos:
-        def __init__(self, parent, app):
-            self.parent = parent
-            self.app = app
+        def __init__(self, parent, app): pass
         def crear_widgets(self): pass
         def mostrar(self): pass
 
@@ -74,9 +64,7 @@ try:
 except ImportError as e:
     print(f"❌ Error cargando PaginaDiferencial: {e}")
     class PaginaDiferencial:
-        def __init__(self, parent, app):
-            self.parent = parent
-            self.app = app
+        def __init__(self, parent, app): pass
         def crear_widgets(self): pass
         def mostrar(self): pass
 
@@ -86,9 +74,7 @@ try:
 except ImportError as e:
     print(f"❌ Error cargando PaginaIntegral: {e}")
     class PaginaIntegral:
-        def __init__(self, parent, app):
-            self.parent = parent
-            self.app = app
+        def __init__(self, parent, app): pass
         def crear_widgets(self): pass
         def mostrar(self): pass
 
@@ -98,15 +84,13 @@ try:
 except ImportError as e:
     print(f"❌ Error cargando VentanaAyudaSymPy: {e}")
     class VentanaAyudaSymPy:
-        def __init__(self, parent):
-            pass
+        def __init__(self, parent): pass
 
-# ... el resto de tu main.py se mantiene igual ...
 class AplicacionPrincipal(ctk.CTk):
     def __init__(self):
         super().__init__()
         
-        self.title("MathPro - Herramientas Matematicas Avanzadas")
+        self.title("MathPro - Herramientas Matemáticas Avanzadas")
         self.geometry("1200x800")
         self.minsize(1000, 700)
         
@@ -137,17 +121,22 @@ class AplicacionPrincipal(ctk.CTk):
         self.paginas["integral"] = PaginaIntegral(self.area_contenido, self)
         
         for pagina in self.paginas.values():
-            pagina.grid_remove()
+            if hasattr(pagina, 'grid_remove'):
+                pagina.grid_remove()
 
-    # ... el resto de los métodos de main.py se mantienen igual ...
     def mostrar_pagina(self, nombre_pagina):
         if self.pantalla_actual in self.paginas:
-            self.paginas[self.pantalla_actual].grid_remove()
+            if hasattr(self.paginas[self.pantalla_actual], 'grid_remove'):
+                self.paginas[self.pantalla_actual].grid_remove()
         
         self.pantalla_actual = nombre_pagina
         pagina = self.paginas[nombre_pagina]
-        pagina.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
-        pagina.mostrar()
+        
+        if hasattr(pagina, 'grid'):
+            pagina.grid(row=0, column=0, sticky="nsew", padx=0, pady=0)
+        
+        if hasattr(pagina, 'mostrar'):
+            pagina.mostrar()
         
         if nombre_pagina == "inicio":
             self.btn_inicio.grid_remove()
@@ -159,7 +148,6 @@ class AplicacionPrincipal(ctk.CTk):
         self.marco_nav.grid(row=0, column=0, sticky="nswe")
         self.marco_nav.grid_propagate(False)
         
-        # ... resto del código del panel de navegación ...
         self.marco_nav.grid_rowconfigure(15, weight=1)
         self.marco_nav.grid_rowconfigure(16, weight=0)
         self.marco_nav.grid_columnconfigure(0, weight=1)
