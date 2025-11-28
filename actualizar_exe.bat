@@ -1,85 +1,71 @@
 @echo off
-title Generador MathPro (Modo Blindado)
+title Generador MathPro (Modo VELOCIDAD - OneDir)
 
-:: --- LA LINEA DE ORO: Forzar que trabaje en la carpeta actual ---
 cd /d "%~dp0"
 
 echo ==========================================
-echo   DIAGNOSTICO RAPIDO
+echo   DIAGNOSTICO
 echo ==========================================
-echo Estoy trabajando en: %CD%
-
-:: Verificar si existe el entorno virtual
 if exist ".venv\Scripts\python.exe" (
-    echo [OK] Entorno virtual detectado.
     set "PYTHON_CMD=.venv\Scripts\python.exe"
 ) else (
-    echo [ALERTA] No encuentro '.venv'. Buscando Python global...
     set "PYTHON_CMD=python"
 )
 
-echo Usare este Python: %PYTHON_CMD%
 echo.
-echo Presiona ENTER para empezar la limpieza...
-pause
-
 echo ==========================================
 echo   PASO 1: LIMPIEZA
 echo ==========================================
-
-if exist dist (
-    rmdir /s /q dist
-    echo - Carpeta 'dist' eliminada.
-)
-if exist build (
-    rmdir /s /q build
-    echo - Carpeta 'build' eliminada.
-)
-if exist *.spec (
-    del /q *.spec
-    echo - Archivo .spec eliminado.
-)
+if exist dist rmdir /s /q dist
+if exist build rmdir /s /q build
+if exist *.spec del /q *.spec
+echo - Limpieza lista.
 
 echo.
 echo ==========================================
-echo   PASO 2: CREANDO EJECUTABLE
+echo   PASO 2: CREANDO PROGRAMA (MODO CARPETA)
 echo ==========================================
-echo Generando... (Esto puede tardar 1 minuto)
+echo Generando... (Esto es mas rapido que antes)
 
-:: EJECUCION DIRECTA
-:: Usamos el python del venv para llamar a PyInstaller como modulo (-m)
-:: Esto evita problemas de PATH
+:: CAMBIO CLAVE: Usamos --onedir en vez de --onefile
+:: Esto crea una carpeta con todo descomprimido = Inicio Instantaneo
 
-"%PYTHON_CMD%" -m PyInstaller --noconsole --onefile --icon="icono.ico" --name="MathPro" --collect-all customtkinter main.py
+"%PYTHON_CMD%" -m PyInstaller ^
+ --noconsole ^
+ --onedir ^
+ --clean ^
+ --icon="icono.ico" ^
+ --name="MathPro" ^
+ --collect-all customtkinter ^
+ --collect-all matplotlib ^
+ main.py
 
 if %errorlevel% neq 0 (
-    color 47
-    echo.
-    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    echo [ERROR] ALGO FALLO EN PYINSTALLER.
-    echo Revisa el mensaje rojo arriba.
-    echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    color 4C
+    echo [ERROR] FALLO PYINSTALLER.
     pause
     exit /b
 )
 
 echo.
 echo ==========================================
-echo   PASO 3: ACCESO DIRECTO
+echo   PASO 3: CREANDO ACCESO DIRECTO
 echo ==========================================
 
-set "RUTA_EXE=%CD%\dist\MathPro.exe"
-set "RUTA_ICONO="C:\Users\luisg\OneDrive\Desktop\algebra lineal\Algebra_Lineal\icono.ico"\icono.ico"
+:: Ahora el EXE esta dentro de una carpeta
+set "RUTA_EXE=%CD%\dist\MathPro\MathPro.exe"
+set "RUTA_DIR=%CD%\dist\MathPro"
 set "RUTA_LNK=%USERPROFILE%\Desktop\MathPro.lnk"
 
-echo Creando acceso directo en el Escritorio...
-
-powershell -command "$s = (New-Object -ComObject WScript.Shell).CreateShortcut('C:\Users\luisg\OneDrive\Desktop\MathPro.lnk'); $s.TargetPath = 'C:\Users\luisg\OneDrive\Desktop\Algebra_Lineal\Algebra_Luis\dist\MathPro.exe'; $s.WorkingDirectory = 'C:\Users\luisg\OneDrive\Desktop\Algebra_Lineal\Algebra_Luis\dist'; $s.IconLocation = 'C:\Users\luisg\OneDrive\Desktop\Algebra_Lineal\Algebra_Luis\icono.ico'; $s.Save()"
-
+:: Creamos el acceso directo en el escritorio apuntando a la carpeta dist
+powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%RUTA_LNK%'); $s.TargetPath='%RUTA_EXE%'; $s.WorkingDirectory='%RUTA_DIR%'; $s.IconLocation='%RUTA_EXE%,0'; $s.Save()"
 
 echo.
 echo ==========================================
-echo   EXITO TOTAL MAE!
+echo   LISTO MAE!
 echo ==========================================
-echo Tu programa esta listo en el escritorio.
+echo Prueba el icono en tu Escritorio.
+echo Deberia abrir DE UNA VEZ (sin esperar).
+echo.
+echo NOTA: No muevas la carpeta 'dist' o se rompe el link.
 pause

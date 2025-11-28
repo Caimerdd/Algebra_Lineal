@@ -1,10 +1,8 @@
 import customtkinter as ctk
 from paginas.pagina_base import PaginaBase
-# --- IMPORTACIONES MODIFICADAS ---
 from app_config import (COLOR_TARJETA, COLOR_TEXTO_TARJETA, 
                         COLOR_ALGEBRA, COLOR_NUMERICOS, COLOR_HOVER,
                         COLOR_FUNDAMENTOS, COLOR_DIFERENCIAL, COLOR_INTEGRAL)
-# ---------------------------------
 
 class PaginaInicio(PaginaBase):
     def crear_widgets(self):
@@ -33,34 +31,35 @@ class PaginaInicio(PaginaBase):
                     font=ctk.CTkFont(size=16),
                     text_color="gray70").grid(row=1, column=0, pady=(0, 40))
         
-        # --- LAYOUT DE TARJETAS MODIFICADO (3 Columnas, 2 Filas) ---
+        # --- LAYOUT DE TARJETAS (3 Columnas, 2 Filas) ---
         marco_tarjetas = ctk.CTkFrame(marco_bienvenida, fg_color="transparent")
         marco_tarjetas.grid(row=2, column=0, sticky="nsew", padx=40, pady=20)
         marco_tarjetas.grid_columnconfigure(0, weight=1)
         marco_tarjetas.grid_columnconfigure(1, weight=1)
-        marco_tarjetas.grid_columnconfigure(2, weight=1) # Nueva columna
+        marco_tarjetas.grid_columnconfigure(2, weight=1) 
         marco_tarjetas.grid_rowconfigure(0, weight=1)
-        marco_tarjetas.grid_rowconfigure(1, weight=1) # Nueva fila
+        marco_tarjetas.grid_rowconfigure(1, weight=1)
         
         # --- Fila 1 ---
         self.crear_tarjeta(marco_tarjetas, 
                            titulo="Fundamentos de Álgebra", 
                            emoji="🧮",
-                           descripcion="Polinomios, funciones\ny gráficas.\n(En construcción...)",
+                           descripcion="Polinomios, factorización\ny simplificación.",
                            color=COLOR_FUNDAMENTOS,
                            pagina="fundamentos").grid(row=0, column=0, sticky="nsew", padx=10, pady=10)
         
         self.crear_tarjeta(marco_tarjetas, 
                            titulo="Cálculo Diferencial", 
                            emoji="📈",
-                           descripcion="Límites, reglas de\nderivación y aplicaciones.\n(En construcción...)",
+                           descripcion="Límites y Derivadas.",
                            color=COLOR_DIFERENCIAL,
                            pagina="diferencial").grid(row=0, column=1, sticky="nsew", padx=10, pady=10)
 
         self.crear_tarjeta(marco_tarjetas, 
                            titulo="Cálculo Integral", 
                            emoji="📉",
-                           descripcion="Integrales indefinidas,\ndefinidas y series.\n(En construcción...)",
+                           # DESCRIPCIÓN CORREGIDA: Más precisa y ajustada al espacio
+                           descripcion="Integrales, áreas, volúmenes\ny longitud de arco.",
                            color=COLOR_INTEGRAL,
                            pagina="integral").grid(row=0, column=2, sticky="nsew", padx=10, pady=10)
         
@@ -68,19 +67,18 @@ class PaginaInicio(PaginaBase):
         self.crear_tarjeta(marco_tarjetas, 
                            titulo="Álgebra Lineal", 
                            emoji="📐",
-                           descripcion="Sistemas de ecuaciones,\nmatrices y propiedades.",
+                           descripcion="Sistemas, matrices,\nvectores y propiedades.",
                            color=COLOR_ALGEBRA,
                            pagina="sistemas_ecuaciones").grid(row=1, column=0, sticky="nsew", padx=10, pady=10)
         
         self.crear_tarjeta(marco_tarjetas, 
                            titulo="Métodos Numéricos", 
                            emoji="🔢",
-                           descripcion="Ecuaciones no lineales,\nBisección, Newton...",
+                           descripcion="Raíces, bisección,\nNewton y gráficas.",
                            color=COLOR_NUMERICOS,
                            pagina="metodos_numericos").grid(row=1, column=1, sticky="nsew", padx=10, pady=10)
         
-        # Dejamos la (Fila 1, Columna 2) vacía a propósito
-        
+        # Espacio vacío para balancear
         ctk.CTkLabel(self, text="").grid(row=2, column=0)
     
     def crear_tarjeta(self, parent, titulo, emoji, descripcion, color, pagina):
@@ -104,9 +102,20 @@ class PaginaInicio(PaginaBase):
                     text_color=COLOR_TEXTO_TARJETA,
                     justify="center").grid(row=2, column=0, pady=(0, 20), padx=10)
         
-        # Extrae la primera palabra del título para el botón
-        txt_btn = titulo.split(' ')[0]
-        if txt_btn == "Fundamentos": txt_btn = "Álgebra"
+        # LÓGICA CORREGIDA PARA EL TEXTO DEL BOTÓN
+        txt_btn = ""
+        if "Integral" in titulo:
+            txt_btn = "Integrales"
+        elif "Diferencial" in titulo:
+            txt_btn = "Diferencial"
+        elif "Fundamentos" in titulo:
+            txt_btn = "Álgebra"
+        elif "Lineal" in titulo:
+            txt_btn = "Matrices"
+        elif "Numéricos" in titulo:
+            txt_btn = "Métodos"
+        else:
+            txt_btn = titulo.split(' ')[0]
         
         btn = ctk.CTkButton(tarjeta, text=f"Explorar {txt_btn}",
                                   fg_color=color, hover_color=COLOR_HOVER,

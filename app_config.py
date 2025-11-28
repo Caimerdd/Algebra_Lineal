@@ -4,34 +4,54 @@ BLOQUE_DETALLE = 3
 MAX_SNAPSHOTS = 80
 PASO_SALTOS = 5
 
-# --- MEJORA DE COLORES (Tema Profesional) ---
+# --- FUENTES ---
+FONT_MAIN = "Segoe UI"  
+FONT_MONO = "Consolas"
 
-# Acento: Cambiado de Rojo/Morado a Azul Índigo/Cian Eléctrico
-# Esto se ve más "matemático" y evita parecer un mensaje de error.
-COLOR_ACENTO = ("#3F51B5", "#738FFE")       # Indigo 500 / Indigo A200
-COLOR_HOVER = ("#303F9F", "#536DFE")        # Indigo 700 / Indigo A400
+# --- PALETA DE COLORES "ROYAL NAVY" (Basada en tu imagen) ---
 
-# Fondos: Un gris un poco más oscuro en Dark Mode para mejor contraste
-COLOR_FONDO_SECUNDARIO = ("gray92", "#1a1a1a") 
-COLOR_BOTON_SECUNDARIO = ("gray80", "#333333")
-COLOR_BOTON_SECUNDARIO_HOVER = ("gray70", "#404040")
+# 1. Fondos Principales (El lienzo de atrás)
+# Light: Gris muy pálido (Casi blanco)
+# Dark: #021024 (Tu azul más profundo) -> Se ve increíblemente elegante.
+COLOR_FONDO_PRINCIPAL = ("#F8FAFC", "#050821") 
 
-# --- Colores de Módulos (Vibrantes y Distintos) ---
-# Se mantienen similares pero ajustados para no chocar con el acento
-COLOR_ALGEBRA = ("#1976D2", "#2196F3")     # Azul Profundo
-COLOR_NUMERICOS = ("#0097A7", "#00BCD4")   # Cian Teal
-COLOR_FUNDAMENTOS = ("#388E3C", "#4CAF50") # Verde
-COLOR_DIFERENCIAL = ("#F57C00", "#FF9800") # Naranja
-COLOR_INTEGRAL = ("#7B1FA2", "#9C27B0")    # Morado (Ahora único, no choca con el acento)
-# ----------------------------------------
+# 2. Fondos Secundarios (Barra Lateral y Tarjetas)
+# Light: Blanco Puro
+# Dark: #052659 (Tu azul intermedio) -> Da un contraste perfecto con el fondo.
+COLOR_FONDO_SECUNDARIO = ("#FFFFFF", "#00183B") 
 
-COLOR_FONDO_PRINCIPAL = ("#f8f9fa", "#121212") # Fondo casi blanco / casi negro
-COLOR_TARJETA = ("white", "#1e1e1e") # Tarjetas flotantes
-COLOR_TEXTO_TARJETA = ("#333333", "#ffffff")
+# 3. Textos
+# Light: Usamos tu azul oscuro (#021024) en lugar de negro. ¡Se ve muy pro!
+# Dark: Blanco Humo (#F1F5F9) para máxima legibilidad sobre el azul.
+COLOR_TEXTO_PRINCIPAL = ("#021024", "#F1F5F9")
+COLOR_TEXTO_SECUNDARIO = ("#475569", "#94A3B8")
 
-# Funciones Auxiliares (Sin cambios, ya estaban bien)
+# 4. Botones de Navegación
+# Se funden con el panel correspondiente
+COLOR_BOTON_SECUNDARIO = ("#FFFFFF", "#031C41") 
+# Hover: Un tono ligeramente distinto para dar feedback visual
+COLOR_BOTON_SECUNDARIO_HOVER = ("#E2E8F0", "#0A3A80") 
+
+# 5. Acentos (El color de los botones principales y switches)
+# Light: Tu azul intermedio
+# Dark: Un azul acero claro (#5483B3) para que resalte sobre el fondo oscuro.
+COLOR_ACENTO = ("#052659", "#5483B3") 
+COLOR_HOVER = ("#021024", "#7DA0CA")
+
+# --- COLORES DE MÓDULOS (Ajustados para combinar con el azul) ---
+# Mantenemos colores distintivos pero que no "vibren" feo con el azul oscuro
+COLOR_ALGEBRA = ("#0284C7", "#38BDF8")     # Sky Blue
+COLOR_NUMERICOS = ("#059669", "#34D399")   # Emerald
+COLOR_FUNDAMENTOS = ("#D97706", "#FBBF24") # Amber
+COLOR_DIFERENCIAL = ("#DC2626", "#F87171") # Red
+COLOR_INTEGRAL = ("#7C3AED", "#A78BFA")    # Violet
+
+# Alias para compatibilidad
+COLOR_TARJETA = COLOR_FONDO_SECUNDARIO 
+COLOR_TEXTO_TARJETA = COLOR_TEXTO_PRINCIPAL
+
+# Funciones Auxiliares
 def fmt(x: float) -> str:
-    """Formatea números: muestra enteros sin decimales y decimales con 4 cifras."""
     if x is None: return ""
     if abs(x) < 1e-9: return "0"
     if abs(x - round(x)) < 1e-9: return f"{int(round(x))}"
@@ -43,18 +63,9 @@ def parse_valor(texto: str) -> float:
     if '/' in texto:
         try:
             partes = texto.split('/')
-            if len(partes) != 2: raise ValueError(f"Formato inválido: {texto}")
-            num = float(partes[0].strip())
-            den = float(partes[1].strip())
-            if den == 0: raise ValueError(f"División por cero: {texto}")
-            return num / den
-        except Exception as e:
-            raise ValueError(f"Fracción inválida: '{texto}'")
+            if len(partes) != 2: raise ValueError
+            return float(partes[0]) / float(partes[1])
+        except: raise ValueError
     else:
-        try:
-            return float(texto)
-        except ValueError:
-            if 'e' in texto.lower():
-                try: return float(texto)
-                except: pass
-            raise ValueError(f"Valor inválido: '{texto}'")
+        try: return float(texto)
+        except: raise ValueError
