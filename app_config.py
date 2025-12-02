@@ -8,38 +8,41 @@ PASO_SALTOS = 5
 FONT_MAIN = "Segoe UI"  
 FONT_MONO = "Consolas"
 
-# --- PALETA DE COLORES "ROYAL NAVY" (Basada en tu imagen) ---
+# --- PALETA DE COLORES PERSONALIZADA (Tu Selección) ---
 
 # 1. Fondos Principales (El lienzo de atrás)
-# Light: Gris muy pálido (Casi blanco)
-# Dark: #021024 (Tu azul más profundo) -> Se ve increíblemente elegante.
+# Light: Gris muy pálido
+# Dark: Tu Azul Profundo Personalizado (#050821)
 COLOR_FONDO_PRINCIPAL = ("#F8FAFC", "#050821") 
 
-# 2. Fondos Secundarios (Barra Lateral y Tarjetas)
+# 2. Fondos Secundarios (Barra Lateral y Tarjetas Grandes)
 # Light: Blanco Puro
-# Dark: #052659 (Tu azul intermedio) -> Da un contraste perfecto con el fondo.
+# Dark: Tu Azul Intermedio (#00183B)
 COLOR_FONDO_SECUNDARIO = ("#FFFFFF", "#00183B") 
 
-# 3. Textos
-# Light: Usamos tu azul oscuro (#021024) en lugar de negro. ¡Se ve muy pro!
-# Dark: Blanco Humo (#F1F5F9) para máxima legibilidad sobre el azul.
+# 3. Tarjetas Flotantes (Items del Menú Inicio)
+# Usamos un tono ligeramente más claro que el fondo secundario para que resalten
+COLOR_TARJETA_ITEM = ("#FFFFFF", "#031C41")
+
+# 4. Textos
+# Light: Azul muy oscuro en lugar de negro
+# Dark: Blanco Humo
 COLOR_TEXTO_PRINCIPAL = ("#021024", "#F1F5F9")
 COLOR_TEXTO_SECUNDARIO = ("#475569", "#94A3B8")
 
-# 4. Botones de Navegación
-# Se funden con el panel correspondiente
+# 5. Botones de Navegación
+# Se funden con el panel correspondiente (Tu tono #031C41)
 COLOR_BOTON_SECUNDARIO = ("#FFFFFF", "#031C41") 
 # Hover: Un tono ligeramente distinto para dar feedback visual
 COLOR_BOTON_SECUNDARIO_HOVER = ("#E2E8F0", "#0A3A80") 
 
-# 5. Acentos (El color de los botones principales y switches)
+# 6. Acentos (El color de los botones principales y switches)
 # Light: Tu azul intermedio
-# Dark: Un azul acero claro (#5483B3) para que resalte sobre el fondo oscuro.
+# Dark: Un azul acero claro para resaltar
 COLOR_ACENTO = ("#052659", "#5483B3") 
 COLOR_HOVER = ("#021024", "#7DA0CA")
 
-# --- COLORES DE MÓDULOS (Ajustados para combinar con el azul) ---
-# Mantenemos colores distintivos pero que no "vibren" feo con el azul oscuro
+# --- COLORES DE MÓDULOS ---
 COLOR_ALGEBRA = ("#0284C7", "#38BDF8")     # Sky Blue
 COLOR_NUMERICOS = ("#059669", "#34D399")   # Emerald
 COLOR_FUNDAMENTOS = ("#D97706", "#FBBF24") # Amber

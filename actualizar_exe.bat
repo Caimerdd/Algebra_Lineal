@@ -1,6 +1,7 @@
 @echo off
-title Generador MathPro (Modo VELOCIDAD - OneDir)
+title Generador MathPro (Optimizado en DIST)
 
+:: 1. Ubicarse en la carpeta del proyecto
 cd /d "%~dp0"
 
 echo ==========================================
@@ -8,32 +9,39 @@ echo   DIAGNOSTICO
 echo ==========================================
 if exist ".venv\Scripts\python.exe" (
     set "PYTHON_CMD=.venv\Scripts\python.exe"
+    echo [OK] Usando entorno virtual.
 ) else (
     set "PYTHON_CMD=python"
+    echo [INFO] Usando Python global.
 )
 
 echo.
 echo ==========================================
 echo   PASO 1: LIMPIEZA
 echo ==========================================
-if exist dist rmdir /s /q dist
 if exist build rmdir /s /q build
 if exist *.spec del /q *.spec
+:: Nota: No borramos 'dist' completo para no borrar otros exes viejos si tienes,
+:: pero PyInstaller sobrescribirá MathPro.exe.
 echo - Limpieza lista.
 
 echo.
 echo ==========================================
-echo   PASO 2: CREANDO PROGRAMA (MODO CARPETA)
+echo   PASO 2: GENERANDO EXE (OPTIMIZADO)
 echo ==========================================
-echo Generando... (Esto es mas rapido que antes)
+echo Creando archivo unico en la carpeta 'dist'...
+echo Aplicando optimizacion --noupx para inicio mas rapido.
 
-:: CAMBIO CLAVE: Usamos --onedir en vez de --onefile
-:: Esto crea una carpeta con todo descomprimido = Inicio Instantaneo
+:: COMANDO OPTIMIZADO:
+:: --onefile: Crea un solo archivo .exe (sin carpetas).
+:: --noupx: NO comprime el ejecutable. (Hace que pese mas, pero abre mas rapido).
+:: --windowed: Sin consola negra.
 
 "%PYTHON_CMD%" -m PyInstaller ^
  --noconsole ^
- --onedir ^
+ --onefile ^
  --clean ^
+ --noupx ^
  --icon="icono.ico" ^
  --name="MathPro" ^
  --collect-all customtkinter ^
@@ -42,30 +50,20 @@ echo Generando... (Esto es mas rapido que antes)
 
 if %errorlevel% neq 0 (
     color 4C
-    echo [ERROR] FALLO PYINSTALLER.
+    echo [ERROR] Fallo la creacion.
     pause
     exit /b
 )
 
-echo.
-echo ==========================================
-echo   PASO 3: CREANDO ACCESO DIRECTO
-echo ==========================================
-
-:: Ahora el EXE esta dentro de una carpeta
-set "RUTA_EXE=%CD%\dist\MathPro\MathPro.exe"
-set "RUTA_DIR=%CD%\dist\MathPro"
-set "RUTA_LNK=%USERPROFILE%\Desktop\MathPro.lnk"
-
-:: Creamos el acceso directo en el escritorio apuntando a la carpeta dist
-powershell -Command "$s=(New-Object -COM WScript.Shell).CreateShortcut('%RUTA_LNK%'); $s.TargetPath='%RUTA_EXE%'; $s.WorkingDirectory='%RUTA_DIR%'; $s.IconLocation='%RUTA_EXE%,0'; $s.Save()"
+:: Limpieza final de archivos temporales
+if exist build rmdir /s /q build
+if exist *.spec del /q *.spec
 
 echo.
 echo ==========================================
 echo   LISTO MAE!
 echo ==========================================
-echo Prueba el icono en tu Escritorio.
-echo Deberia abrir DE UNA VEZ (sin esperar).
+echo Tu archivo esta en la carpeta: dist/MathPro.exe
 echo.
-echo NOTA: No muevas la carpeta 'dist' o se rompe el link.
+echo Pruebalo desde ahi. Deberia abrir mas rapido que antes.
 pause
